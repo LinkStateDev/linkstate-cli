@@ -1,6 +1,6 @@
 package main
 
-import "github.com/netbycode/nbc-cli/cmd"
+import "github.com/LinkStateDev/linkstate-cli/cmd"
 
 func main() {
 	cmd.Execute()

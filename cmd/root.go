@@ -8,16 +8,15 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "nbc",
-	Short: "NetByCode CLI",
+	Use:   "linkstate-cli",
+	Short: "LinkStateDev CLI",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("nbc - netbycode toolkit")
+		fmt.Println("linkstate-cli - LinkStateDev toolkit")
 	},
 }
 
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(os.Stderr, err)
 		os.Exit(1)
 	}
 }

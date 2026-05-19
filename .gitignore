@@ -1,4 +1,3 @@
-nbc
-nbc-cli
+linkstate-cli
 *.test
 .env
