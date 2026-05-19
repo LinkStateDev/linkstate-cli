@@ -1,0 +1,4 @@
+nbc
+nbc-cli
+*.test
+.env
