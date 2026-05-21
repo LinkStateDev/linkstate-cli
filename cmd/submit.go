@@ -36,9 +36,9 @@ var submitCmd = &cobra.Command{
 			return fmt.Errorf("parse .linkstate-task.json: %w", err)
 		}
 
-		solutionFile := "solution.py"
-		if _, err := os.Stat(solutionFile); os.IsNotExist(err) {
-			return fmt.Errorf("solution.py not found in current directory")
+		solutionFile := findSolutionFile()
+		if solutionFile == "" {
+			return fmt.Errorf("no solution file (solution.py/solution.go) found in current directory")
 		}
 
 		report, err := taskrunner.Run(string(configData), solutionFile)

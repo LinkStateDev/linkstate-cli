@@ -69,7 +69,7 @@ var authCmd = &cobra.Command{
 			if err := config.Save(cfg); err != nil {
 				return fmt.Errorf("save config: %w", err)
 			}
-			fmt.Printf("Logged in as %s\n", res.email)
+			fmt.Printf("Welcome back, %s!\n", res.email)
 			return nil
 		case err := <-errCh:
 			srv.Close()

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -28,14 +29,18 @@ var fetchCmd = &cobra.Command{
 			return fmt.Errorf("fetch task: %w", err)
 		}
 
+		ext := ".py"
+		if task.TaskType == "go" || strings.HasPrefix(task.Template, "package main") {
+			ext = ".go"
+		}
 		dir := fmt.Sprintf("task-%d", taskID)
 		if err := os.MkdirAll(dir, 0755); err != nil {
 			return fmt.Errorf("create dir: %w", err)
 		}
 
-		solutionFile := fmt.Sprintf("%s/solution.py", dir)
+		solutionFile := fmt.Sprintf("%s/solution%s", dir, ext)
 		if err := os.WriteFile(solutionFile, []byte(task.Template), 0644); err != nil {
-			return fmt.Errorf("write solution.py: %w", err)
+			return fmt.Errorf("write solution%s: %w", ext, err)
 		}
 
 		testConfigFile := fmt.Sprintf("%s/test_config.json", dir)
@@ -56,15 +61,24 @@ var fetchCmd = &cobra.Command{
 		}
 
 		fmt.Printf("Created %s/\n", dir)
-		fmt.Printf("  solution.py          → your code goes here\n")
+		fmt.Printf("  solution%s           → your code goes here\n", ext)
 		fmt.Printf("  test_config.json     → validation rules\n")
 		fmt.Printf("  .linkstate-task.json → metadata\n")
 		fmt.Println()
-		fmt.Println("Next: edit solution.py, then run:")
+		fmt.Printf("Next: edit solution%s, then run:\n", ext)
 		fmt.Printf("  cd %s && linkstate-cli test\n", dir)
 		fmt.Println("  linkstate-cli submit")
 		return nil
 	},
+}
+
+func findSolutionFile() string {
+	for _, name := range []string{"solution.go", "solution.py"} {
+		if _, err := os.Stat(name); err == nil {
+			return name
+		}
+	}
+	return ""
 }
 
 func init() {

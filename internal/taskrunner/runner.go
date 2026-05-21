@@ -61,8 +61,8 @@ func Run(configJSON, solutionFile string) (*Report, error) {
 
 func runOutput(cfg *TestConfig, solutionFile string) (*Report, error) {
 	args := strings.Fields(cfg.Run)
-	for i, a := range args {
-		if a == "python3" && i+1 < len(args) && args[i+1] == "solution.py" {
+	for i := range args {
+		if i+1 < len(args) && (args[i+1] == "solution.py" || args[i+1] == "solution.go") {
 			args[i+1] = solutionFile
 		}
 	}
@@ -107,8 +107,8 @@ func runOutput(cfg *TestConfig, solutionFile string) (*Report, error) {
 
 func runServer(cfg *TestConfig, solutionFile string) (*Report, error) {
 	args := strings.Fields(cfg.Run)
-	for i, a := range args {
-		if a == "python3" && i+1 < len(args) && args[i+1] == "solution.py" {
+	for i := range args {
+		if i+1 < len(args) && (args[i+1] == "solution.py" || args[i+1] == "solution.go") {
 			args[i+1] = solutionFile
 		}
 	}
