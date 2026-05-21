@@ -34,7 +34,7 @@ var rootCmd = &cobra.Command{
 		fmt.Println("LinkStateDev CLI — network automation courses")
 		fmt.Println("")
 		fmt.Println("Commands:")
-		fmt.Println("  login     Authenticate and save token")
+		fmt.Println("  auth      Authenticate via browser")
 		fmt.Println("  fetch     Download a task to solve locally")
 		fmt.Println("  test      Run local tests against your solution")
 		fmt.Println("  submit    Submit your solution result")
