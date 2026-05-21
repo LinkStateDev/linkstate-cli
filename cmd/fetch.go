@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -29,10 +28,7 @@ var fetchCmd = &cobra.Command{
 			return fmt.Errorf("fetch task: %w", err)
 		}
 
-		ext := ".py"
-		if task.TaskType == "go" || strings.HasPrefix(task.Template, "package main") {
-			ext = ".go"
-		}
+		ext := ".go"
 		dir := fmt.Sprintf("task-%d", taskID)
 		if err := os.MkdirAll(dir, 0755); err != nil {
 			return fmt.Errorf("create dir: %w", err)
@@ -73,10 +69,8 @@ var fetchCmd = &cobra.Command{
 }
 
 func findSolutionFile() string {
-	for _, name := range []string{"solution.go", "solution.py"} {
-		if _, err := os.Stat(name); err == nil {
-			return name
-		}
+	if _, err := os.Stat("solution.go"); err == nil {
+		return "solution.go"
 	}
 	return ""
 }
