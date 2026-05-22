@@ -28,15 +28,14 @@ var fetchCmd = &cobra.Command{
 			return fmt.Errorf("fetch task: %w", err)
 		}
 
-		ext := ".go"
 		dir := fmt.Sprintf("task-%d", taskID)
 		if err := os.MkdirAll(dir, 0755); err != nil {
 			return fmt.Errorf("create dir: %w", err)
 		}
 
-		solutionFile := fmt.Sprintf("%s/solution%s", dir, ext)
-		if err := os.WriteFile(solutionFile, []byte(task.Template), 0644); err != nil {
-			return fmt.Errorf("write solution%s: %w", ext, err)
+		mainFile := fmt.Sprintf("%s/main.go", dir)
+		if err := os.WriteFile(mainFile, []byte(task.Template), 0644); err != nil {
+			return fmt.Errorf("write main.go: %w", err)
 		}
 
 		testConfigFile := fmt.Sprintf("%s/test_config.json", dir)
@@ -57,11 +56,11 @@ var fetchCmd = &cobra.Command{
 		}
 
 		fmt.Printf("Created %s/\n", dir)
-		fmt.Printf("  solution%s           → your code goes here\n", ext)
+		fmt.Printf("  main.go              → your code goes here\n")
 		fmt.Printf("  test_config.json     → validation rules\n")
 		fmt.Printf("  .linkstate-task.json → metadata\n")
 		fmt.Println()
-		fmt.Printf("Next: edit solution%s, then run:\n", ext)
+		fmt.Println("Next: edit main.go, then run:")
 		fmt.Printf("  cd %s && linkstate-cli test\n", dir)
 		fmt.Println("  linkstate-cli submit")
 		return nil
@@ -69,8 +68,8 @@ var fetchCmd = &cobra.Command{
 }
 
 func findSolutionFile() string {
-	if _, err := os.Stat("solution.go"); err == nil {
-		return "solution.go"
+	if _, err := os.Stat("main.go"); err == nil {
+		return "main.go"
 	}
 	return ""
 }

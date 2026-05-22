@@ -38,7 +38,7 @@ var submitCmd = &cobra.Command{
 
 		solutionFile := findSolutionFile()
 		if solutionFile == "" {
-			return fmt.Errorf("solution.go not found in current directory")
+			return fmt.Errorf("main.go not found in current directory")
 		}
 
 		report, err := taskrunner.Run(string(configData), solutionFile)
