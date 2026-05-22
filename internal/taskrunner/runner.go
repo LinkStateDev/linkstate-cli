@@ -11,14 +11,23 @@ import (
 	"time"
 )
 
+type TestCase struct {
+	Args           []string `json:"args,omitempty"`
+	Stdin          string   `json:"stdin,omitempty"`
+	ExpectedStdout string   `json:"expected_stdout,omitempty"`
+}
+
 type TestConfig struct {
 	Type           string     `json:"type"`
 	Run            string     `json:"run"`
+	Args           []string   `json:"args,omitempty"`
 	Stdin          string     `json:"stdin,omitempty"`
 	ExpectedStdout string     `json:"expected_stdout,omitempty"`
+	Cases          []TestCase `json:"cases,omitempty"`
 	Port           int        `json:"port,omitempty"`
 	StartupWaitMs  int        `json:"startup_wait_ms,omitempty"`
 	Tests          []HTTPTest `json:"tests,omitempty"`
+	Hints          []string   `json:"hints,omitempty"`
 }
 
 type HTTPTest struct {
@@ -60,15 +69,23 @@ func Run(configJSON, solutionFile string) (*Report, error) {
 }
 
 func runOutput(cfg *TestConfig, solutionFile string) (*Report, error) {
-	args := strings.Fields(cfg.Run)
-	for i := range args {
-		if i+1 < len(args) && args[i+1] == "main.go" {
-			args[i+1] = solutionFile
+	if len(cfg.Cases) > 0 {
+		return runCases(cfg, solutionFile)
+	}
+	return runSingle(cfg, solutionFile, cfg.Args, cfg.Stdin, cfg.ExpectedStdout, "output")
+}
+
+func runSingle(cfg *TestConfig, solutionFile string, args []string, stdin, expected, name string) (*Report, error) {
+	baseArgs := strings.Fields(cfg.Run)
+	for i := range baseArgs {
+		if i+1 < len(baseArgs) && baseArgs[i+1] == "main.go" {
+			baseArgs[i+1] = solutionFile
 		}
 	}
+	allArgs := append(baseArgs, args...)
 
-	cmd := exec.Command(args[0], args[1:]...)
-	cmd.Stdin = strings.NewReader(cfg.Stdin)
+	cmd := exec.Command(allArgs[0], allArgs[1:]...)
+	cmd.Stdin = strings.NewReader(stdin)
 
 	var stdout bytes.Buffer
 	cmd.Stdout = &stdout
@@ -78,8 +95,8 @@ func runOutput(cfg *TestConfig, solutionFile string) (*Report, error) {
 	actual := stdout.String()
 
 	r := TestResult{
-		Name:     "output",
-		Expected: cfg.ExpectedStdout,
+		Name:     name,
+		Expected: expected,
 		Actual:   actual,
 	}
 
@@ -88,19 +105,35 @@ func runOutput(cfg *TestConfig, solutionFile string) (*Report, error) {
 		if r.Actual == "" {
 			r.Actual = fmt.Sprintf("process error: %v", err)
 		}
-		return &Report{
-			Failed:  1,
-			Results: []TestResult{r},
-		}, nil
+		return &Report{Failed: 1, Results: []TestResult{r}}, nil
 	}
 
-	r.Passed = actual == cfg.ExpectedStdout
+	r.Passed = actual == expected
 	report := &Report{Results: []TestResult{r}}
 	if r.Passed {
 		report.Passed = 1
 		report.AllPass = true
 	} else {
 		report.Failed = 1
+	}
+	return report, nil
+}
+
+func runCases(cfg *TestConfig, solutionFile string) (*Report, error) {
+	report := &Report{AllPass: true}
+	for i, c := range cfg.Cases {
+		name := fmt.Sprintf("case %d", i+1)
+		r, err := runSingle(cfg, solutionFile, c.Args, c.Stdin, c.ExpectedStdout, name)
+		if err != nil {
+			return nil, err
+		}
+		report.Results = append(report.Results, r.Results[0])
+		if r.AllPass {
+			report.Passed++
+		} else {
+			report.Failed++
+			report.AllPass = false
+		}
 	}
 	return report, nil
 }
