@@ -8,9 +8,10 @@ import (
 )
 
 type Config struct {
-	Server string `json:"server"`
-	Token  string `json:"token"`
-	Email  string `json:"email"`
+	Server  string `json:"server"`
+	Web     string `json:"web"`
+	Token   string `json:"token"`
+	Email   string `json:"email"`
 }
 
 func Path() string {
