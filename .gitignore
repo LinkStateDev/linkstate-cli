@@ -2,4 +2,4 @@ lst
 linkstate-cli
 task-*/
 *.test
-.env
+.envintro/

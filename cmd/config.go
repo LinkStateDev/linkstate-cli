@@ -14,7 +14,7 @@ var configCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) == 0 {
 			fmt.Printf("%s %s\n", color.Bold("Server:"), color.Yellow(cfg.Server))
-			fmt.Printf("%s %s\n", color.Bold("Workspace:"), color.Yellow(cfg.Workspace))
+			fmt.Printf("%s %s\n", color.Bold("Path:"), color.Yellow(cfg.Path))
 			if cfg.Email != "" {
 				fmt.Printf("Logged in: %s\n", cfg.Email)
 			} else {
@@ -27,10 +27,8 @@ var configCmd = &cobra.Command{
 		}
 		key, val := args[1], args[2]
 		switch key {
-		case "server":
-			cfg.Server = val
-		case "workspace":
-			cfg.Workspace = val
+		case "server", "path":
+			if key == "server" { cfg.Server = val } else { cfg.Path = val }
 		default:
 			return fmt.Errorf("unknown key: %s (available: server, workspace)", key)
 		}

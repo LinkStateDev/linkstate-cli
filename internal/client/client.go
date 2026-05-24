@@ -49,6 +49,7 @@ func (c *Client) ListCourses() ([]Course, error) {
 type Lesson struct {
 	ID         int    `json:"id"`
 	CourseID   int    `json:"course_id"`
+	CourseSlug string `json:"course_slug"`
 	ChapterID  int    `json:"chapter_id"`
 	Slug       string `json:"slug"`
 	Title      string `json:"title"`
