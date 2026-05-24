@@ -71,7 +71,7 @@ var submitCmd = &cobra.Command{
 		if resp.LessonCompleted {
 			fmt.Printf("✅ Task %d completed!\n", meta.TaskID)
 			if resp.NextLessonID != nil {
-				fmt.Printf("Next lesson: %s/lessons/%d\n", cfg.Web, *resp.NextLessonID)
+				fmt.Printf("Next lesson: %s/lessons/%d\n", cfg.Server, *resp.NextLessonID)
 			} else {
 				fmt.Println("Course completed! 🎉")
 			}

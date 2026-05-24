@@ -11,7 +11,6 @@ import (
 
 var (
 	serverURL string
-	webURL    string
 	cliClient *client.Client
 	cfg       *config.Config
 )
@@ -27,12 +26,6 @@ var rootCmd = &cobra.Command{
 		}
 		if serverURL != "" {
 			cfg.Server = serverURL
-		}
-		if webURL != "" {
-			cfg.Web = webURL
-		}
-		if cfg.Web == "" {
-			cfg.Web = "http://localhost:5173"
 		}
 		cliClient = client.New(cfg.Server, cfg.Token)
 		return nil
@@ -66,5 +59,4 @@ func Execute() {
 
 func init() {
 	rootCmd.PersistentFlags().StringVar(&serverURL, "server", "", "API server URL (default http://localhost:8080)")
-	rootCmd.PersistentFlags().StringVar(&webURL, "web", "", "Web app URL (default http://localhost:5173)")
 }
