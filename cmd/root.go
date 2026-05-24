@@ -58,5 +58,5 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringVar(&serverURL, "server", "", "API server URL (default http://localhost:8080)")
+	rootCmd.PersistentFlags().StringVar(&serverURL, "server", "", "Server URL (default http://localhost)")
 }

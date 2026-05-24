@@ -26,7 +26,7 @@ func Path() string {
 }
 
 func Load() (*Config, error) {
-	cfg := &Config{Server: "http://localhost:8080"}
+	cfg := &Config{Server: "http://localhost"}
 	data, err := os.ReadFile(Path())
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -39,7 +39,7 @@ func Load() (*Config, error) {
 		return nil, err
 	}
 	if cfg.Server == "" {
-		cfg.Server = "http://localhost:8080"
+		cfg.Server = "http://localhost"
 	}
 	if cfg.Workspace == "" {
 		cfg.Workspace = defaultWorkspace()
