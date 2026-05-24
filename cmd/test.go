@@ -14,7 +14,7 @@ var testCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configData, err := os.ReadFile("test_config.json")
 		if err != nil {
-			return fmt.Errorf("not in a task directory? (test_config.json not found). Run: linkstate-cli fetch <id>")
+			return fmt.Errorf("not in a task directory? (test_config.json not found). Run: lst fetch <id>")
 		}
 
 		solutionFile := findSolutionFile()
@@ -41,7 +41,7 @@ var testCmd = &cobra.Command{
 		fmt.Println()
 		if report.AllPass {
 			fmt.Printf("All %d tests passed! Ready to submit.\n", report.Passed)
-			fmt.Println("Run: linkstate-cli submit")
+			fmt.Println("Run: lst submit")
 		} else {
 			fmt.Printf("%d passed, %d failed.\n", report.Passed, report.Failed)
 		}

@@ -15,7 +15,7 @@ var fetchCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if cfg.Token == "" {
-			return fmt.Errorf("not logged in. Run: linkstate-cli login")
+			return fmt.Errorf("not logged in. Run: lst auth")
 		}
 
 		taskID, err := strconv.Atoi(args[0])
@@ -61,8 +61,8 @@ var fetchCmd = &cobra.Command{
 		fmt.Printf("  .linkstate-task.json → metadata\n")
 		fmt.Println()
 		fmt.Println("Next: edit main.go, then run:")
-		fmt.Printf("  cd %s && linkstate-cli test\n", dir)
-		fmt.Println("  linkstate-cli submit")
+		fmt.Printf("  cd %s && lst test\n", dir)
+		fmt.Println("  lst submit")
 		return nil
 	},
 }

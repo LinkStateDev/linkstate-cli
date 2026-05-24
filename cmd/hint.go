@@ -15,7 +15,7 @@ var hintCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		data, err := os.ReadFile("test_config.json")
 		if err != nil {
-			return fmt.Errorf("not in a task directory? Run: linkstate-cli fetch <id>")
+			return fmt.Errorf("not in a task directory? Run: lst fetch <id>")
 		}
 
 		var cfg struct {
@@ -46,7 +46,7 @@ var hintCmd = &cobra.Command{
 		fmt.Println(hint)
 
 		if level < len(cfg.Hints) {
-			fmt.Printf("\nNeed more details? Run: linkstate-cli hint %d\n", level+1)
+			fmt.Printf("\nNeed more details? Run: lst hint %d\n", level+1)
 		} else if level > 1 {
 			fmt.Println("\nThat was the last hint. Good luck!")
 		}

@@ -16,7 +16,7 @@ var (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "linkstate-cli",
+	Use:   "lst",
 	Short: "LinkStateDev — network automation learning platform",
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		var err error
@@ -46,7 +46,7 @@ var rootCmd = &cobra.Command{
 		if cfg.Email != "" {
 			fmt.Printf("Logged in as: %s\n", cfg.Email)
 		} else {
-			fmt.Println("Not logged in. Run: linkstate-cli login")
+			fmt.Println("Not logged in. Run: lst auth")
 		}
 	},
 }

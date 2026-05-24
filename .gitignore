@@ -1,4 +1,4 @@
-linkstate-cli
+lst
 task-*/
 *.test
 .env

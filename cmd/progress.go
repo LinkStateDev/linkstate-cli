@@ -11,7 +11,7 @@ var progressCmd = &cobra.Command{
 	Short: "Show your learning progress",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if cfg.Token == "" {
-			return fmt.Errorf("not logged in. Run: linkstate-cli login")
+			return fmt.Errorf("not logged in. Run: lst auth")
 		}
 
 		items, err := cliClient.GetProgress()
@@ -21,7 +21,7 @@ var progressCmd = &cobra.Command{
 
 		if len(items) == 0 {
 			fmt.Println("No progress yet. Start a course!")
-			fmt.Println("Run: linkstate-cli courses")
+			fmt.Println("Run: lst courses")
 			return nil
 		}
 

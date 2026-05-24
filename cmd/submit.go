@@ -14,17 +14,17 @@ var submitCmd = &cobra.Command{
 	Short: "Run tests and submit result to server",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if cfg.Token == "" {
-			return fmt.Errorf("not logged in. Run: linkstate-cli login")
+			return fmt.Errorf("not logged in. Run: lst auth")
 		}
 
 		configData, err := os.ReadFile("test_config.json")
 		if err != nil {
-			return fmt.Errorf("not in a task directory? Run: linkstate-cli fetch <id>")
+			return fmt.Errorf("not in a task directory? Run: lst fetch <id>")
 		}
 
 		metaData, err := os.ReadFile(".linkstate-task.json")
 		if err != nil {
-			return fmt.Errorf(".linkstate-task.json not found. Run: linkstate-cli fetch <id>")
+			return fmt.Errorf(".linkstate-task.json not found. Run: lst fetch <id>")
 		}
 		var meta struct {
 			TaskID    int    `json:"task_id"`
@@ -76,7 +76,7 @@ var submitCmd = &cobra.Command{
 				fmt.Println("Course completed! 🎉")
 			}
 		} else {
-			fmt.Printf("❌ Task %d not yet passed. Fix errors and run 'linkstate-cli submit' again.\n", meta.TaskID)
+			fmt.Printf("❌ Task %d not yet passed. Fix errors and run 'lst submit' again.\n", meta.TaskID)
 		}
 		return nil
 	},
