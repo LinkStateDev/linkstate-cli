@@ -11,8 +11,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var authWebURL string
-
 var authCmd = &cobra.Command{
 	Use:   "auth",
 	Short: "Authenticate via browser",
@@ -24,9 +22,9 @@ var authCmd = &cobra.Command{
 		port := listener.Addr().(*net.TCPAddr).Port
 		callbackURL := fmt.Sprintf("http://localhost:%d", port)
 
-		webURL := authWebURL
+		webURL := cfg.Server
 		if webURL == "" {
-			webURL = "http://localhost:5173"
+			webURL = "http://localhost"
 		}
 
 		authURL := fmt.Sprintf("%s/login?callback=%s", webURL, callbackURL)
@@ -97,6 +95,5 @@ func openBrowser(url string) {
 }
 
 func init() {
-	authCmd.Flags().StringVar(&authWebURL, "web", "", "Web app URL (default http://localhost:5173)")
 	rootCmd.AddCommand(authCmd)
 }
