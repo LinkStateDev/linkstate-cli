@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/LinkStateDev/linkstate-cli/internal/color"
+	"github.com/charmbracelet/glamour"
 	"github.com/spf13/cobra"
 )
 
@@ -44,7 +45,18 @@ var hintCmd = &cobra.Command{
 
 		hint := cfg.Hints[level-1]
 		fmt.Printf("%s %s\n", color.Bold(color.Yellow("💡 Hint")), color.Faint(fmt.Sprintf("(%d/%d):", level, len(cfg.Hints))))
-		fmt.Println(hint)
+		fmt.Println()
+
+		r, _ := glamour.NewTermRenderer(
+			glamour.WithStandardStyle("dark"),
+			glamour.WithWordWrap(90),
+		)
+		out, err := r.Render(hint)
+		if err != nil {
+			fmt.Println(hint)
+		} else {
+			fmt.Print(out)
+		}
 
 		if level < len(cfg.Hints) {
 			fmt.Printf("\nNeed more details? Run: lst hint %d\n", level+1)
