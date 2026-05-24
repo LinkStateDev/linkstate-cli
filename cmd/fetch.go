@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 
 	"github.com/spf13/cobra"
@@ -28,7 +29,7 @@ var fetchCmd = &cobra.Command{
 			return fmt.Errorf("fetch task: %w", err)
 		}
 
-		dir := fmt.Sprintf("task-%d", taskID)
+		dir := filepath.Join(cfg.Workspace, fmt.Sprintf("task-%d", taskID))
 		if err := os.MkdirAll(dir, 0755); err != nil {
 			return fmt.Errorf("create dir: %w", err)
 		}

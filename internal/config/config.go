@@ -8,9 +8,10 @@ import (
 )
 
 type Config struct {
-	Server string `json:"server"`
-	Token  string `json:"token"`
-	Email  string `json:"email"`
+	Server    string `json:"server"`
+	Token     string `json:"token"`
+	Email     string `json:"email"`
+	Workspace string `json:"workspace"`
 }
 
 func Path() string {
@@ -29,6 +30,7 @@ func Load() (*Config, error) {
 	data, err := os.ReadFile(Path())
 	if err != nil {
 		if os.IsNotExist(err) {
+			cfg.Workspace = defaultWorkspace()
 			return cfg, nil
 		}
 		return nil, err
@@ -38,6 +40,9 @@ func Load() (*Config, error) {
 	}
 	if cfg.Server == "" {
 		cfg.Server = "http://localhost:8080"
+	}
+	if cfg.Workspace == "" {
+		cfg.Workspace = defaultWorkspace()
 	}
 	return cfg, nil
 }
@@ -52,4 +57,12 @@ func Save(cfg *Config) error {
 		return err
 	}
 	return os.WriteFile(Path(), data, 0600)
+}
+
+func defaultWorkspace() string {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "."
+	}
+	return filepath.Join(home, "linkstate", "workspace")
 }
