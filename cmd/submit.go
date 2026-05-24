@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/LinkStateDev/linkstate-cli/internal/color"
 	"github.com/LinkStateDev/linkstate-cli/internal/taskrunner"
 	"github.com/spf13/cobra"
 )
@@ -49,11 +50,11 @@ var submitCmd = &cobra.Command{
 		fmt.Println()
 		for _, r := range report.Results {
 			if r.Passed {
-				fmt.Printf("  ✅ %s: PASS\n", r.Name)
+				fmt.Printf("  %s %s: %s\n", color.Green("✅"), r.Name, color.Green("PASS"))
 			} else {
-				fmt.Printf("  ❌ %s: FAIL\n", r.Name)
-				fmt.Printf("     expected: %s\n", r.Expected)
-				fmt.Printf("     actual:   %s\n", r.Actual)
+				fmt.Printf("  %s %s: %s\n", color.Red("❌"), r.Name, color.Red("FAIL"))
+				fmt.Printf("     %s %s\n", color.Faint("expected:"), color.Yellow(r.Expected))
+				fmt.Printf("     %s %s\n", color.Faint("actual:"), color.Yellow(r.Actual))
 			}
 		}
 
@@ -69,14 +70,14 @@ var submitCmd = &cobra.Command{
 
 		fmt.Println()
 		if resp.LessonCompleted {
-			fmt.Printf("✅ Task %d completed!\n", meta.TaskID)
+			fmt.Printf("%s %s\n", color.Green("✅"), color.Bold("Task completed!"))
 			if resp.NextLessonID != nil {
-				fmt.Printf("Next lesson: %s/lessons/%d\n", cfg.Server, *resp.NextLessonID)
+				fmt.Printf("Next lesson: %s\n", color.Yellow(fmt.Sprintf("%s/lessons/%d", cfg.Server, *resp.NextLessonID)))
 			} else {
 				fmt.Println("Course completed! 🎉")
 			}
 		} else {
-			fmt.Printf("❌ Task %d not yet passed. Fix errors and run 'lst submit' again.\n", meta.TaskID)
+			fmt.Printf("%s %s\n", color.Red("❌"), color.Faint("Task not yet passed. Fix errors and run 'lst submit' again."))
 		}
 		return nil
 	},

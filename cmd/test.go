@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/LinkStateDev/linkstate-cli/internal/color"
 	"github.com/LinkStateDev/linkstate-cli/internal/taskrunner"
 	"github.com/spf13/cobra"
 )
@@ -30,11 +31,11 @@ var testCmd = &cobra.Command{
 		fmt.Println()
 		for _, r := range report.Results {
 			if r.Passed {
-				fmt.Printf("  ✅ %s: PASS\n", r.Name)
+				fmt.Printf("  %s %s: %s\n", color.Green("✅"), r.Name, color.Green("PASS"))
 			} else {
-				fmt.Printf("  ❌ %s: FAIL\n", r.Name)
-				fmt.Printf("     expected: %s\n", r.Expected)
-				fmt.Printf("     actual:   %s\n", r.Actual)
+				fmt.Printf("  %s %s: %s\n", color.Red("❌"), r.Name, color.Red("FAIL"))
+				fmt.Printf("     %s %s\n", color.Faint("expected:"), color.Yellow(r.Expected))
+				fmt.Printf("     %s %s\n", color.Faint("actual:"), color.Yellow(r.Actual))
 			}
 		}
 

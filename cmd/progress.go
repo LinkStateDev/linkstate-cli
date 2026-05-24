@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/LinkStateDev/linkstate-cli/internal/color"
 	"github.com/spf13/cobra"
 )
 
@@ -32,9 +33,11 @@ var progressCmd = &cobra.Command{
 			icon := "🔒"
 			switch p.Status {
 			case "available":
-				icon = "✅"
+				icon = color.Green("✅")
 			case "completed":
-				icon = "✔️"
+				icon = color.Green("✔️")
+			default:
+				icon = color.Faint("🔒")
 			}
 			completed := "-"
 			if p.CompletedAt != nil {

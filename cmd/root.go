@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/LinkStateDev/linkstate-cli/internal/config"
+	"github.com/LinkStateDev/linkstate-cli/internal/color"
 	"github.com/LinkStateDev/linkstate-cli/internal/client"
+	"github.com/LinkStateDev/linkstate-cli/internal/config"
 	"github.com/spf13/cobra"
 )
 
@@ -31,8 +32,8 @@ var rootCmd = &cobra.Command{
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("LinkStateDev CLI — network automation courses")
-		fmt.Println("")
+		fmt.Println(color.Bold("LinkStateDev CLI — network automation courses"))
+		fmt.Println()
 		fmt.Println("Commands:")
 		fmt.Println("  auth      Authenticate via browser")
 		fmt.Println("  fetch     Download a task to solve locally")
@@ -40,13 +41,15 @@ var rootCmd = &cobra.Command{
 		fmt.Println("  submit    Submit your solution result")
 		fmt.Println("  progress  Show your learning progress")
 		fmt.Println("  hint      Get a hint for the current task")
+		fmt.Println("  config    Show or change settings")
+		fmt.Println("  version   Print version")
 		fmt.Println("  logout    Clear saved authentication")
-		fmt.Println("")
-		fmt.Printf("Server: %s\n", cfg.Server)
+		fmt.Println()
+		fmt.Printf("Server: %s\n", color.Yellow(cfg.Server))
 		if cfg.Email != "" {
-			fmt.Printf("Logged in as: %s\n", cfg.Email)
+			fmt.Printf("Logged in: %s\n", cfg.Email)
 		} else {
-			fmt.Println("Not logged in. Run: lst auth")
+			fmt.Println(color.Faint("Not logged in. Run: lst auth"))
 		}
 	},
 }

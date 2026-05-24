@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/LinkStateDev/linkstate-cli/internal/color"
 	"github.com/LinkStateDev/linkstate-cli/internal/config"
 	"github.com/spf13/cobra"
 )
@@ -12,8 +13,8 @@ var configCmd = &cobra.Command{
 	Short: "Show or change settings",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) == 0 {
-			fmt.Printf("Server:    %s\n", cfg.Server)
-			fmt.Printf("Workspace: %s\n", cfg.Workspace)
+			fmt.Printf("%s %s\n", color.Bold("Server:"), color.Yellow(cfg.Server))
+			fmt.Printf("%s %s\n", color.Bold("Workspace:"), color.Yellow(cfg.Workspace))
 			if cfg.Email != "" {
 				fmt.Printf("Logged in: %s\n", cfg.Email)
 			} else {

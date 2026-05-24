@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/LinkStateDev/linkstate-cli/internal/color"
 	"github.com/spf13/cobra"
 )
 
@@ -42,7 +43,7 @@ var hintCmd = &cobra.Command{
 		}
 
 		hint := cfg.Hints[level-1]
-		fmt.Printf("💡 Hint (%d/%d):\n", level, len(cfg.Hints))
+		fmt.Printf("%s %s\n", color.Bold(color.Yellow("💡 Hint")), color.Faint(fmt.Sprintf("(%d/%d):", level, len(cfg.Hints))))
 		fmt.Println(hint)
 
 		if level < len(cfg.Hints) {

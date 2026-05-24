@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"runtime"
 
+	"github.com/LinkStateDev/linkstate-cli/internal/color"
 	"github.com/LinkStateDev/linkstate-cli/internal/config"
 	"github.com/spf13/cobra"
 )
@@ -67,7 +68,7 @@ var authCmd = &cobra.Command{
 			if err := config.Save(cfg); err != nil {
 				return fmt.Errorf("save config: %w", err)
 			}
-			fmt.Printf("Welcome back, %s!\n", res.email)
+			fmt.Printf(color.Bold(color.Green("Welcome back, %s!\n")), res.email)
 			return nil
 		case err := <-errCh:
 			srv.Close()
