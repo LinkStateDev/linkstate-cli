@@ -39,6 +39,8 @@ var rootCmd = &cobra.Command{
 		fmt.Println("  test      Run local tests against your solution")
 		fmt.Println("  submit    Submit your solution result")
 		fmt.Println("  progress  Show your learning progress")
+		fmt.Println("  hint      Get a hint for the current task")
+		fmt.Println("  logout    Clear saved authentication")
 		fmt.Println("")
 		fmt.Printf("Server: %s\n", cfg.Server)
 		if cfg.Email != "" {
