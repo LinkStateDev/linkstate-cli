@@ -50,6 +50,7 @@ type Lesson struct {
 	ID         int    `json:"id"`
 	CourseID   int    `json:"course_id"`
 	ChapterID  int    `json:"chapter_id"`
+	Slug       string `json:"slug"`
 	Title      string `json:"title"`
 	Content    string `json:"content"`
 	IsFree     bool   `json:"is_free"`
@@ -85,6 +86,14 @@ func (c *Client) GetCourse(id int) (*CourseDetail, error) {
 
 func (c *Client) GetLesson(id int) (*Lesson, error) {
 	resp, err := c.do("GET", fmt.Sprintf("/api/lessons/%d", id), nil, c.Token)
+	if err != nil { return nil, err }
+	var l Lesson
+	if err := decode(resp, &l); err != nil { return nil, err }
+	return &l, nil
+}
+
+func (c *Client) GetLessonBySlug(slug string) (*Lesson, error) {
+	resp, err := c.do("GET", "/api/lessons/slug/"+slug, nil, c.Token)
 	if err != nil { return nil, err }
 	var l Lesson
 	if err := decode(resp, &l); err != nil { return nil, err }
