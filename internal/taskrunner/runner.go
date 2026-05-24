@@ -57,6 +57,9 @@ func Run(configJSON, solutionFile string) (*Report, error) {
 	if err := json.Unmarshal([]byte(configJSON), &cfg); err != nil {
 		return nil, fmt.Errorf("parse test_config: %w", err)
 	}
+	if cfg.Type == "" {
+		return nil, fmt.Errorf("invalid test_config. Try: lst fetch <id> again to get the latest task config")
+	}
 
 	switch cfg.Type {
 	case "output":
