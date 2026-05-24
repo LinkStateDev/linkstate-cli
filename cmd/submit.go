@@ -12,41 +12,23 @@ import (
 
 var submitCmd = &cobra.Command{
 	Use:   "submit",
-	Short: "Run tests and submit result to server",
+	Short: "Run tests and submit result",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if cfg.Token == "" {
-			return fmt.Errorf("not logged in. Run: lst auth")
-		}
-
+		if cfg.Token == "" { return fmt.Errorf("not logged in. Run: lst auth") }
 		configData, err := os.ReadFile("test_config.json")
-		if err != nil {
-			return fmt.Errorf("not in a task directory? Run: lst fetch <id>")
-		}
-
-		metaData, err := os.ReadFile(".linkstate-task.json")
-		if err != nil {
-			return fmt.Errorf(".linkstate-task.json not found. Run: lst fetch <id>")
-		}
+		if err != nil { return fmt.Errorf("not in a lesson directory? Run: lst fetch <id>") }
+		metaData, err := os.ReadFile(".linkstate.json")
+		if err != nil { return fmt.Errorf(".linkstate.json not found. Run: lst fetch <id>") }
 		var meta struct {
-			TaskID    int    `json:"task_id"`
-			LessonID  int    `json:"lesson_id"`
-			Title     string `json:"title"`
-			TaskType  string `json:"task_type"`
+			LessonID int    `json:"lesson_id"`
+			Title    string `json:"title"`
 		}
-		if err := json.Unmarshal(metaData, &meta); err != nil {
-			return fmt.Errorf("parse .linkstate-task.json: %w", err)
-		}
+		if err := json.Unmarshal(metaData, &meta); err != nil { return fmt.Errorf("parse .linkstate.json: %w", err) }
+		sf := findSolutionFile()
+		if sf == "" { return fmt.Errorf("main.go not found") }
 
-		solutionFile := findSolutionFile()
-		if solutionFile == "" {
-			return fmt.Errorf("main.go not found in current directory")
-		}
-
-		report, err := taskrunner.Run(string(configData), solutionFile)
-		if err != nil {
-			return fmt.Errorf("test error: %w", err)
-		}
-
+		report, err := taskrunner.Run(string(configData), sf)
+		if err != nil { return fmt.Errorf("test error: %w", err) }
 		fmt.Println()
 		for _, r := range report.Results {
 			if r.Passed {
@@ -57,32 +39,23 @@ var submitCmd = &cobra.Command{
 				fmt.Printf("     %s %s\n", color.Faint("actual:"), color.Yellow(r.Actual))
 			}
 		}
-
 		status := "fail"
-		if report.AllPass {
-			status = "pass"
-		}
-
-		resp, err := cliClient.Submit(meta.TaskID, status)
-		if err != nil {
-			return fmt.Errorf("submit failed: %w", err)
-		}
-
+		if report.AllPass { status = "pass" }
+		resp, err := cliClient.Submit(meta.LessonID, status)
+		if err != nil { return fmt.Errorf("submit: %w", err) }
 		fmt.Println()
 		if resp.LessonCompleted {
-			fmt.Printf("%s %s\n", color.Green("✅"), color.Bold("Task completed!"))
+			fmt.Printf("%s %s\n", color.Green("✅"), color.Bold("Lesson completed!"))
 			if resp.NextLessonID != nil {
 				fmt.Printf("Next lesson: %s\n", color.Yellow(fmt.Sprintf("%s/lessons/%d", cfg.Server, *resp.NextLessonID)))
 			} else {
 				fmt.Println("Course completed! 🎉")
 			}
 		} else {
-			fmt.Printf("%s %s\n", color.Red("❌"), color.Faint("Task not yet passed. Fix errors and run 'lst submit' again."))
+			fmt.Printf("%s %s\n", color.Red("❌"), color.Faint("Not yet passed. Fix errors and run 'lst submit' again."))
 		}
 		return nil
 	},
 }
 
-func init() {
-	rootCmd.AddCommand(submitCmd)
-}
+func init() { rootCmd.AddCommand(submitCmd) }

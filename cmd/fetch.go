@@ -11,70 +11,44 @@ import (
 )
 
 var fetchCmd = &cobra.Command{
-	Use:   "fetch <task-id>",
-	Short: "Download a task to solve locally",
+	Use:   "fetch <lesson-id>",
+	Short: "Download a lesson to solve locally",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if cfg.Token == "" {
 			return fmt.Errorf("not logged in. Run: lst auth")
 		}
+		id, err := strconv.Atoi(args[0])
+		if err != nil { return fmt.Errorf("invalid lesson id: %s", args[0]) }
+		lesson, err := cliClient.GetLesson(id)
+		if err != nil { return fmt.Errorf("fetch: %w", err) }
 
-		taskID, err := strconv.Atoi(args[0])
-		if err != nil {
-			return fmt.Errorf("invalid task id: %s", args[0])
-		}
+		dir := filepath.Join(cfg.Workspace, fmt.Sprintf("lesson-%d", id))
+		if err := os.MkdirAll(dir, 0755); err != nil { return fmt.Errorf("create dir: %w", err) }
 
-		task, err := cliClient.GetTask(taskID)
-		if err != nil {
-			return fmt.Errorf("fetch task: %w", err)
-		}
-
-		dir := filepath.Join(cfg.Workspace, fmt.Sprintf("task-%d", taskID))
-		if err := os.MkdirAll(dir, 0755); err != nil {
-			return fmt.Errorf("create dir: %w", err)
-		}
-
-		mainFile := fmt.Sprintf("%s/main.go", dir)
-		if err := os.WriteFile(mainFile, []byte(task.Template), 0644); err != nil {
+		if err := os.WriteFile(filepath.Join(dir, "main.go"), []byte(lesson.Template), 0644); err != nil {
 			return fmt.Errorf("write main.go: %w", err)
 		}
-
-		testConfigFile := fmt.Sprintf("%s/test_config.json", dir)
-		if err := os.WriteFile(testConfigFile, []byte(task.TestConfig), 0644); err != nil {
+		if err := os.WriteFile(filepath.Join(dir, "test_config.json"), []byte(lesson.TestConfig), 0644); err != nil {
 			return fmt.Errorf("write test_config.json: %w", err)
 		}
-
-		meta := map[string]any{
-			"task_id":    task.ID,
-			"lesson_id":  task.LessonID,
-			"title":      task.Title,
-			"task_type":  task.TaskType,
+		meta, _ := json.MarshalIndent(map[string]any{"lesson_id": id, "title": lesson.Title}, "", "  ")
+		if err := os.WriteFile(filepath.Join(dir, ".linkstate.json"), meta, 0644); err != nil {
+			return fmt.Errorf("write .linkstate.json: %w", err)
 		}
-		metaData, _ := json.MarshalIndent(meta, "", "  ")
-		metaFile := fmt.Sprintf("%s/.linkstate-task.json", dir)
-		if err := os.WriteFile(metaFile, metaData, 0644); err != nil {
-			return fmt.Errorf("write .linkstate-task.json: %w", err)
-		}
-
 		fmt.Printf("Created %s/\n", dir)
-		fmt.Printf("  main.go              → your code goes here\n")
-		fmt.Printf("  test_config.json     → validation rules\n")
-		fmt.Printf("  .linkstate-task.json → metadata\n")
-		fmt.Println()
-		fmt.Println("Next: edit main.go, then run:")
-		fmt.Printf("  cd %s && lst test\n", dir)
-		fmt.Println("  lst submit")
+		fmt.Println("  main.go              → your code")
+		fmt.Println("  test_config.json     → validation rules")
+		fmt.Println("  .linkstate.json      → metadata")
+		fmt.Printf("\nNext: cd %s && lst test\n", dir)
+		fmt.Println("      lst submit")
 		return nil
 	},
 }
 
-func findSolutionFile() string {
-	if _, err := os.Stat("main.go"); err == nil {
-		return "main.go"
-	}
-	return ""
-}
+func init() { rootCmd.AddCommand(fetchCmd) }
 
-func init() {
-	rootCmd.AddCommand(fetchCmd)
+func findSolutionFile() string {
+	if _, err := os.Stat("main.go"); err == nil { return "main.go" }
+	return ""
 }
