@@ -28,34 +28,20 @@ var fetchCmd = &cobra.Command{
 		dir := filepath.Join(cfg.Path, l.CourseSlug, slug)
 		if err := os.MkdirAll(dir, 0755); err != nil { return fmt.Errorf("create dir: %w", err) }
 
-		zipURL := fmt.Sprintf("%s/api/download/%s", cfg.Server, slug)
+		zipURL := fmt.Sprintf("%s/api/download/%s/%s-%s", cfg.Server, slug, runtime.GOOS, runtime.GOARCH)
 		if err := downloadAndUnzip(zipURL, dir); err != nil {
 			return fmt.Errorf("download: %w", err)
 		}
 
-		// Select the right test binary for this platform
-		testName := fmt.Sprintf("test-%s-%s", runtime.GOOS, runtime.GOARCH)
-		if runtime.GOOS == "windows" { testName += ".exe" }
-		testSrc := filepath.Join(dir, testName)
-		testDst := filepath.Join(dir, "test")
-		if runtime.GOOS == "windows" { testDst += ".exe" }
-		if _, err := os.Stat(testSrc); err == nil {
-			os.Rename(testSrc, testDst)
-			os.Chmod(testDst, 0755)
-		}
-		// Clean up unused test binaries
-		for _, name := range []string{"test-linux-amd64", "test-darwin-amd64", "test-darwin-arm64", "test-windows-amd64.exe"} {
-			if name != testName {
-				os.Remove(filepath.Join(dir, name))
-			}
-		}
-
-		// Rename template.go to main.go if needed
+		// Rename template.go to main.go
 		tmplFile := filepath.Join(dir, "template.go")
 		mainFile := filepath.Join(dir, "main.go")
 		if _, err := os.Stat(tmplFile); err == nil {
 			os.Rename(tmplFile, mainFile)
 		}
+
+		// Make test binary executable
+		os.Chmod(filepath.Join(dir, "test"), 0755)
 
 		meta, _ := json.MarshalIndent(map[string]any{"lesson_id": l.ID, "slug": slug, "title": l.Title}, "", "  ")
 		if err := os.WriteFile(filepath.Join(dir, ".linkstate.json"), meta, 0644); err != nil {
