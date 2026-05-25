@@ -33,13 +33,6 @@ var fetchCmd = &cobra.Command{
 			return fmt.Errorf("download: %w", err)
 		}
 
-		// Rename template.go to main.go
-		tmplFile := filepath.Join(dir, "template.go")
-		mainFile := filepath.Join(dir, "main.go")
-		if _, err := os.Stat(tmplFile); err == nil {
-			os.Rename(tmplFile, mainFile)
-		}
-
 		// Make test binary executable
 		os.Chmod(filepath.Join(dir, "test"), 0755)
 
