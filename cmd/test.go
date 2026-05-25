@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/LinkStateDev/linkstate-cli/internal/color"
 	"github.com/spf13/cobra"
 )
 
@@ -108,33 +109,46 @@ func runTests(submitting bool) error {
 
 	passed, failed := 0, 0
 	fmt.Println()
-	for _, r := range filtered {
-		name := cleanTestName(r.name)
-		status := "PASS"
-		if r.failed { status = "FAIL"; failed++ } else { passed++ }
+	for i, r := range filtered {
+		name := humanName(r.name)
+		status := color.Green("PASS")
+		if r.failed {
+			status = color.Red("FAIL")
+			failed++
+		} else {
+			passed++
+		}
 
-		fmt.Printf("  %-44s %s\n", name, status)
+		if i > 0 { fmt.Println() }
+		fmt.Printf("  %-45s %s\n", name, status)
 		if r.failed && len(r.details) > 0 {
 			for _, d := range r.details {
-				fmt.Printf("    %s\n", d)
+				fmt.Printf("  %s\n", color.Yellow(cleanDetail(d)))
 			}
 		}
 	}
 
 	fmt.Println()
 	if failed == 0 {
-		if !submitting { fmt.Printf("All %d tests passed. Run: lst submit\n", passed) }
+		if !submitting { fmt.Printf("  All %d tests passed. Run: lst submit\n", passed) }
 		return nil
 	}
-	fmt.Printf("%d passed, %d failed.\n", passed, failed)
+	fmt.Printf("  %d passed, %d failed.\n", passed, failed)
 	return nil
 }
 
-func cleanTestName(name string) string {
+func humanName(name string) string {
 	if idx := strings.LastIndex(name, "/"); idx > 0 {
-		return name[idx+1:]
+		name = name[idx+1:]
 	}
+	name = strings.ReplaceAll(name, "_", " ")
+	name = strings.TrimPrefix(name, "Test")
 	return name
+}
+
+func cleanDetail(d string) string {
+	d = strings.ReplaceAll(d, "\\n", "")
+	return d
 }
 
 func init() { rootCmd.AddCommand(testCmd) }
