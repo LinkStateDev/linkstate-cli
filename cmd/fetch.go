@@ -12,6 +12,9 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/LinkStateDev/linkstate-cli/internal/client"
+	"github.com/LinkStateDev/linkstate-cli/internal/ui"
+	"github.com/schollz/progressbar/v3"
 	"github.com/spf13/cobra"
 )
 
@@ -21,10 +24,16 @@ var fetchCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if cfg.Token == "" {
-			return fmt.Errorf("not logged in. Run: lst auth")
+			return errorWithHint("not logged in", "run: lst auth")
 		}
 		slug := args[0]
-		l, err := cliClient.GetLessonBySlug(slug)
+
+		var l *client.Lesson
+		err := withSpinner("Fetching lesson…", func() error {
+			var err error
+			l, err = cliClient.GetLessonBySlug(slug)
+			return err
+		})
 		if err != nil {
 			return fmt.Errorf("fetch: %w", err)
 		}
@@ -35,7 +44,7 @@ var fetchCmd = &cobra.Command{
 		}
 
 		zipURL := fmt.Sprintf("%s/api/download/%s/%s-%s", cfg.Server, slug, runtime.GOOS, runtime.GOARCH)
-		if err := downloadAndUnzip(zipURL, dir); err != nil {
+		if err := downloadAndUnzip(zipURL, dir, slug); err != nil {
 			return fmt.Errorf("download: %w", err)
 		}
 
@@ -53,17 +62,20 @@ var fetchCmd = &cobra.Command{
 		if err := os.WriteFile(filepath.Join(dir, ".linkstate.json"), meta, 0644); err != nil {
 			return fmt.Errorf("write .linkstate.json: %w", err)
 		}
-		fmt.Printf("Created %s/\n", dir)
-		fmt.Println("  main.go              → your code")
-		fmt.Println("  test                 → local test runner")
-		fmt.Println("  .linkstate.json      → metadata")
-		fmt.Printf("\nNext: cd %s && lst test\n", dir)
-		fmt.Println("      lst submit")
+
+		fmt.Println()
+		fmt.Printf("%s %s\n", ui.Success.Render(ui.GlyphPass), ui.Bold.Render(l.Title))
+		fmt.Println(ui.Muted.Render("  " + dir))
+		fmt.Println()
+		fmt.Println(ui.Muted.Render("Next:"))
+		fmt.Printf("  cd %s\n", ui.Hint.Render(dir))
+		fmt.Printf("  %s\n", ui.Hint.Render("lst test"))
+		fmt.Printf("  %s\n", ui.Hint.Render("lst submit"))
 		return nil
 	},
 }
 
-func downloadAndUnzip(url, dir string) error {
+func downloadAndUnzip(url, dir, slug string) error {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return err
@@ -87,7 +99,19 @@ func downloadAndUnzip(url, dir string) error {
 	if err != nil {
 		return err
 	}
-	if _, err := io.Copy(f, resp.Body); err != nil {
+
+	bar := progressbar.NewOptions64(
+		resp.ContentLength,
+		progressbar.OptionSetDescription(ui.Muted.Render("Downloading "+slug+"…")),
+		progressbar.OptionSetWriter(os.Stderr),
+		progressbar.OptionShowBytes(true),
+		progressbar.OptionThrottle(80*1e6),
+		progressbar.OptionOnCompletion(func() { fmt.Fprint(os.Stderr, "\n") }),
+		progressbar.OptionSetWidth(30),
+		progressbar.OptionClearOnFinish(),
+	)
+	if _, err := io.Copy(io.MultiWriter(f, bar), resp.Body); err != nil {
+		f.Close()
 		return err
 	}
 	f.Close()

@@ -1,12 +1,12 @@
 package cmd
 
 import (
-	"encoding/json"
 	"fmt"
-	"os"
 	"strconv"
 
-	"github.com/LinkStateDev/linkstate-cli/internal/color"
+	"github.com/LinkStateDev/linkstate-cli/internal/client"
+	"github.com/LinkStateDev/linkstate-cli/internal/lesson"
+	"github.com/LinkStateDev/linkstate-cli/internal/ui"
 	"github.com/charmbracelet/glamour"
 	"github.com/spf13/cobra"
 )
@@ -15,40 +15,58 @@ var hintCmd = &cobra.Command{
 	Use:   "hint [level]",
 	Short: "Show a hint for the current task",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if cfg.Token == "" { return fmt.Errorf("not logged in. Run: lst auth") }
-
-		metaData, err := os.ReadFile(".linkstate.json")
-		if err != nil { return fmt.Errorf(".linkstate.json not found. Run: lst fetch <slug>") }
-		var meta struct {
-			Slug string `json:"slug"`
+		if cfg.Token == "" {
+			return errorWithHint("not logged in", "run: lst auth")
 		}
-		if err := json.Unmarshal(metaData, &meta); err != nil { return fmt.Errorf("parse .linkstate.json: %w", err) }
-		if meta.Slug == "" { return fmt.Errorf("no slug in .linkstate.json. Re-fetch the lesson") }
+
+		meta, err := lesson.LoadMeta()
+		if err != nil {
+			return err
+		}
+		if meta.Slug == "" {
+			return errorWithHint("no slug in .linkstate.json", "re-fetch the lesson with: lst fetch <slug>")
+		}
 
 		level := 1
-		if len(args) > 0 { level, _ = strconv.Atoi(args[0]) }
-		if level < 1 { level = 1 }
+		if len(args) > 0 {
+			level, _ = strconv.Atoi(args[0])
+		}
+		if level < 1 {
+			level = 1
+		}
 
-		resp, err := cliClient.GetHint(meta.Slug, level)
-		if err != nil { return fmt.Errorf("get hint: %w", err) }
+		var resp *client.HintResponse
+		err = withSpinner("Loading hint…", func() error {
+			r, err := cliClient.GetHint(meta.Slug, level)
+			if err != nil {
+				return err
+			}
+			resp = r
+			return nil
+		})
+		if err != nil {
+			return fmt.Errorf("get hint: %w", err)
+		}
 
-		lvl, _ := resp["level"].(float64)
-		total, _ := resp["total"].(float64)
-		hint, _ := resp["hint"].(string)
+		if resp.Hint == "" {
+			return fmt.Errorf("no hint %d available", level)
+		}
 
-		if hint == "" { return fmt.Errorf("no hint %d available", level) }
-
-		fmt.Printf("%s %s\n", color.Bold(color.Yellow("💡 Hint")), color.Faint(fmt.Sprintf("(%d/%d):", int(lvl), int(total))))
+		fmt.Printf("%s %s\n", ui.Bold.Render(ui.GlyphHint+" Hint"), ui.Muted.Render(fmt.Sprintf("(%d/%d):", resp.Level, resp.Total)))
 		fmt.Println()
 
 		r, _ := glamour.NewTermRenderer(glamour.WithStandardStyle("dark"), glamour.WithWordWrap(90))
-		out, err := r.Render(hint)
-		if err != nil { fmt.Println(hint) } else { fmt.Print(out) }
-
-		if int(lvl) < int(total) {
-			fmt.Printf("\nNeed more details? Run: lst hint %d\n", int(lvl)+1)
+		out, err := r.Render(resp.Hint)
+		if err != nil {
+			fmt.Println(resp.Hint)
 		} else {
-			fmt.Println("\nThat was the last hint. Good luck!")
+			fmt.Print(out)
+		}
+
+		if resp.Level < resp.Total {
+			fmt.Printf("\n%s\n", ui.Muted.Render(fmt.Sprintf("Need more details? Run: lst hint %d", resp.Level+1)))
+		} else {
+			fmt.Println(ui.Muted.Render("\nThat was the last hint. Good luck!"))
 		}
 		return nil
 	},

@@ -3,8 +3,8 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/LinkStateDev/linkstate-cli/internal/color"
 	"github.com/LinkStateDev/linkstate-cli/internal/config"
+	"github.com/LinkStateDev/linkstate-cli/internal/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -13,8 +13,8 @@ var configCmd = &cobra.Command{
 	Short: "Show or change settings",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) == 0 {
-			fmt.Printf("%s %s\n", color.Bold("Server:"), color.Yellow(cfg.Server))
-			fmt.Printf("%s %s\n", color.Bold("Path:"), color.Yellow(cfg.Path))
+			fmt.Printf("%s %s\n", ui.Bold.Render("Server:"), ui.Hint.Render(cfg.Server))
+			fmt.Printf("%s %s\n", ui.Bold.Render("Path:"), ui.Hint.Render(cfg.Path))
 			if cfg.Email != "" {
 				fmt.Printf("Logged in: %s\n", cfg.Email)
 			} else {
@@ -27,8 +27,10 @@ var configCmd = &cobra.Command{
 		}
 		key, val := args[1], args[2]
 		switch key {
-		case "server", "path":
-			if key == "server" { cfg.Server = val } else { cfg.Path = val }
+		case "server":
+			cfg.Server = val
+		case "path":
+			cfg.Path = val
 		default:
 			return fmt.Errorf("unknown key: %s (available: server, path)", key)
 		}

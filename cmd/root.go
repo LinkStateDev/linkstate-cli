@@ -1,12 +1,14 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"os"
+	"strings"
 
-	"github.com/LinkStateDev/linkstate-cli/internal/color"
 	"github.com/LinkStateDev/linkstate-cli/internal/client"
 	"github.com/LinkStateDev/linkstate-cli/internal/config"
+	"github.com/LinkStateDev/linkstate-cli/internal/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -16,9 +18,23 @@ var (
 	cfg       *config.Config
 )
 
+// hintedError carries an actionable suggestion alongside the error message.
+// Returned from RunE so the root error handler can render it as
+// "✘ <msg>\n  → <hint>".
+type hintedError struct {
+	msg  string
+	hint string
+}
+
+func (e *hintedError) Error() string { return e.msg }
+
+func errorWithHint(msg, hint string) error {
+	return &hintedError{msg: msg, hint: hint}
+}
+
 var rootCmd = &cobra.Command{
 	Use:   "lst",
-	Short: "LinkStateDev — network automation learning platform",
+	Short: "LinkState — network automation learning platform",
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		var err error
 		cfg, err = config.Load()
@@ -32,31 +48,55 @@ var rootCmd = &cobra.Command{
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println(color.Bold("LinkStateDev CLI — network automation courses"))
+		fmt.Println(ui.Bold.Render("LinkState CLI") + ui.Muted.Render(" — network automation courses"))
 		fmt.Println()
-		fmt.Println("Commands:")
-		fmt.Println("  auth      Authenticate via browser")
-		fmt.Println("  fetch     Download a task to solve locally")
-		fmt.Println("  test      Run local tests against your solution")
-		fmt.Println("  submit    Submit your solution result")
-		fmt.Println("  progress  Show your learning progress")
-		fmt.Println("  hint      Get a hint for the current task")
-		fmt.Println("  config    Show or change settings")
-		fmt.Println("  version   Print version")
-		fmt.Println("  logout    Clear saved authentication")
+		printRow := func(name, desc string) {
+			fmt.Printf("  %-10s %s\n", ui.Hint.Render(name), ui.Muted.Render(desc))
+		}
+		printRow("auth", "Authenticate via browser")
+		printRow("fetch", "Download a task to solve locally")
+		printRow("test", "Run local tests against your solution")
+		printRow("submit", "Submit your solution result")
+		printRow("progress", "Show your learning progress")
+		printRow("hint", "Get a hint for the current task")
+		printRow("config", "Show or change settings")
+		printRow("version", "Print version")
+		printRow("logout", "Clear saved authentication")
 		fmt.Println()
-		fmt.Printf("Server: %s\n", color.Yellow(cfg.Server))
+		fmt.Printf("%s %s\n", ui.Muted.Render("Server:"), ui.Hint.Render(cfg.Server))
 		if cfg.Email != "" {
-			fmt.Printf("Logged in: %s\n", cfg.Email)
+			fmt.Printf("%s %s\n", ui.Muted.Render("Logged in:"), cfg.Email)
 		} else {
-			fmt.Println(color.Faint("Not logged in. Run: lst auth"))
+			fmt.Println(ui.Muted.Render("Not logged in. Run: lst auth"))
 		}
 	},
+	SilenceErrors: true,
+	SilenceUsage:  true,
 }
 
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
+		printError(err)
 		os.Exit(1)
+	}
+}
+
+func printError(err error) {
+	if errors.Is(err, client.ErrUnauthorized) {
+		if cfg != nil && cfg.Token != "" {
+			cfg.Token = ""
+			cfg.Email = ""
+			_ = config.Save(cfg)
+		}
+		fmt.Fprintf(os.Stderr, "%s %s\n", ui.Error.Render(ui.GlyphFail), "session expired")
+		fmt.Fprintf(os.Stderr, "  %s %s\n", ui.Hint.Render("→"), ui.Hint.Render("run: lst auth"))
+		return
+	}
+	msg := strings.TrimSpace(err.Error())
+	fmt.Fprintf(os.Stderr, "%s %s\n", ui.Error.Render(ui.GlyphFail), msg)
+	var he *hintedError
+	if errors.As(err, &he) && he.hint != "" {
+		fmt.Fprintf(os.Stderr, "  %s %s\n", ui.Hint.Render("→"), ui.Hint.Render(he.hint))
 	}
 }
 

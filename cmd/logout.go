@@ -3,8 +3,8 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/LinkStateDev/linkstate-cli/internal/color"
 	"github.com/LinkStateDev/linkstate-cli/internal/config"
+	"github.com/LinkStateDev/linkstate-cli/internal/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -17,7 +17,7 @@ var logoutCmd = &cobra.Command{
 		if err := config.Save(cfg); err != nil {
 			return fmt.Errorf("save config: %w", err)
 		}
-		fmt.Println(color.Faint("Logged out."))
+		fmt.Println(ui.Muted.Render("Logged out."))
 		return nil
 	},
 }

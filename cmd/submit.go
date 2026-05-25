@@ -1,11 +1,11 @@
 package cmd
 
 import (
-	"encoding/json"
 	"fmt"
-	"os"
 
-	"github.com/LinkStateDev/linkstate-cli/internal/color"
+	"github.com/LinkStateDev/linkstate-cli/internal/client"
+	"github.com/LinkStateDev/linkstate-cli/internal/lesson"
+	"github.com/LinkStateDev/linkstate-cli/internal/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -13,31 +13,45 @@ var submitCmd = &cobra.Command{
 	Use:   "submit",
 	Short: "Run tests and submit result",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if cfg.Token == "" { return fmt.Errorf("not logged in. Run: lst auth") }
-		metaData, err := os.ReadFile(".linkstate.json")
-		if err != nil { return fmt.Errorf(".linkstate.json not found. Run: lst fetch <slug>") }
-		var meta struct {
-			LessonID int    `json:"lesson_id"`
-			Title    string `json:"title"`
+		if cfg.Token == "" {
+			return errorWithHint("not logged in", "run: lst auth")
 		}
-		if err := json.Unmarshal(metaData, &meta); err != nil { return fmt.Errorf("parse .linkstate.json: %w", err) }
+		meta, err := lesson.LoadMeta()
+		if err != nil {
+			return err
+		}
 
 		testErr := runTests(true)
 		status := "fail"
-		if testErr == nil { status = "pass" }
+		if testErr == nil {
+			status = "pass"
+		}
 
-		resp, err := cliClient.Submit(meta.LessonID, status)
-		if err != nil { return fmt.Errorf("submit: %w", err) }
+		var resp *client.SubmitResponse
+		err = withSpinner("Submitting…", func() error {
+			r, err := cliClient.Submit(meta.LessonID, status)
+			if err != nil {
+				return err
+			}
+			resp = r
+			return nil
+		})
+		if err != nil {
+			return fmt.Errorf("submit: %w", err)
+		}
+
 		fmt.Println()
 		if resp.LessonCompleted {
-			fmt.Printf("%s %s\n", color.Green("✅"), color.Bold("Lesson completed!"))
-			if resp.NextLessonID != nil {
-				fmt.Printf("Next lesson: %s\n", color.Yellow(fmt.Sprintf("%s/lessons/%d", cfg.Server, *resp.NextLessonID)))
+			fmt.Printf("%s %s\n", ui.Success.Render(ui.GlyphPass), ui.Bold.Render("Lesson completed!"))
+			if resp.NextLessonSlug != nil && *resp.NextLessonSlug != "" {
+				fmt.Printf("Next lesson: %s\n", ui.Hint.Render(fmt.Sprintf("%s/lessons/%s", cfg.Server, *resp.NextLessonSlug)))
+			} else if resp.NextLessonID != nil {
+				fmt.Printf("Next lesson: %s\n", ui.Hint.Render(fmt.Sprintf("%s/lessons/%d", cfg.Server, *resp.NextLessonID)))
 			} else {
-				fmt.Println("Course completed! 🎉")
+				fmt.Println(ui.Bold.Render("Course completed! 🎉"))
 			}
 		} else {
-			fmt.Printf("%s %s\n", color.Red("❌"), color.Faint("Not yet passed. Fix errors and run 'lst submit' again."))
+			fmt.Printf("%s %s\n", ui.Error.Render(ui.GlyphFail), ui.Muted.Render("Not yet passed. Fix errors and run 'lst submit' again."))
 		}
 		return nil
 	},

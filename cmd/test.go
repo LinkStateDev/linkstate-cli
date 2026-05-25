@@ -8,7 +8,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/LinkStateDev/linkstate-cli/internal/color"
+	"github.com/LinkStateDev/linkstate-cli/internal/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -20,81 +20,89 @@ var testCmd = &cobra.Command{
 	},
 }
 
-var resultRe = regexp.MustCompile(`^\s*--- (PASS|FAIL|SKIP):?\s*(.*?)(?:\s+\(\d+\.\d+s\))?\s*$`)
-var runRe = regexp.MustCompile(`^\s*=== RUN\s+(.*)$`)
-var detailStripRe = regexp.MustCompile(`^\s*test_test\.go:\d+:\s*`)
+var (
+	resultRe      = regexp.MustCompile(`^\s*--- (PASS|FAIL|SKIP):?\s*(.*?)(?:\s+\(\d+\.\d+s\))?\s*$`)
+	runRe         = regexp.MustCompile(`^\s*=== RUN\s+(.*)$`)
+	detailStripRe = regexp.MustCompile(`^\s*test_test\.go:\d+:\s*`)
+)
 
 type testResult struct {
 	name    string
 	failed  bool
+	skipped bool
 	details []string
 }
 
 func runTests(submitting bool) error {
 	if _, err := os.Stat("main.go"); os.IsNotExist(err) {
-		return fmt.Errorf("main.go not found in current directory")
+		return errorWithHint("main.go not found in current directory", "run lst from a fetched lesson directory")
 	}
 	testBin := "./test"
 	if _, err := os.Stat(testBin); os.IsNotExist(err) {
-		return fmt.Errorf("test binary not found. Run: lst fetch <slug>")
+		return errorWithHint("test binary not found", "fetch the lesson first: lst fetch <slug>")
 	}
 
 	cmd := exec.Command(testBin, "-test.v")
 	stdout, err := cmd.StdoutPipe()
-	if err != nil { return err }
-	cmd.Start()
+	if err != nil {
+		return err
+	}
+	if err := cmd.Start(); err != nil {
+		return err
+	}
 
-	detailsByTest := make(map[string][]string)
-	currentTest := ""
+	var (
+		results       []testResult
+		seen          = map[string]bool{}
+		detailsByTest = map[string][]string{}
+		currentTest   string
+	)
 	scanner := bufio.NewScanner(stdout)
 	for scanner.Scan() {
 		text := scanner.Text()
-		if strings.HasPrefix(text, "=== RUN ") {
-			if m := runRe.FindStringSubmatch(text); m != nil {
-				currentTest = strings.TrimSpace(m[1])
-				if detailsByTest[currentTest] == nil {
-					detailsByTest[currentTest] = nil
-				}
+
+		if m := runRe.FindStringSubmatch(text); m != nil {
+			currentTest = strings.TrimSpace(m[1])
+			continue
+		}
+
+		if m := resultRe.FindStringSubmatch(text); m != nil {
+			name := strings.TrimSpace(m[2])
+			if name == "" || seen[name] {
+				continue
 			}
+			seen[name] = true
+			r := testResult{name: name, details: detailsByTest[name]}
+			switch m[1] {
+			case "FAIL":
+				r.failed = true
+			case "SKIP":
+				r.skipped = true
+			}
+			results = append(results, r)
 			continue
 		}
-		if resultRe.MatchString(text) || strings.TrimSpace(text) == "FAIL" {
+
+		if strings.TrimSpace(text) == "FAIL" {
 			continue
 		}
+
 		if currentTest != "" && strings.TrimSpace(text) != "" {
 			clean := detailStripRe.ReplaceAllString(strings.TrimSpace(text), "")
 			if clean != "" {
 				detailsByTest[currentTest] = append(detailsByTest[currentTest], clean)
+				for i := range results {
+					if results[i].name == currentTest {
+						results[i].details = detailsByTest[currentTest]
+					}
+				}
 			}
 		}
 	}
 	cmd.Wait()
 
-	cmd2 := exec.Command(testBin, "-test.v")
-	stdout2, _ := cmd2.StdoutPipe()
-	cmd2.Start()
-
-	var results []testResult
-	seen := make(map[string]bool)
-	scanner2 := bufio.NewScanner(stdout2)
-	for scanner2.Scan() {
-		text := scanner2.Text()
-		m := resultRe.FindStringSubmatch(text)
-		if m == nil { continue }
-		name := strings.TrimSpace(m[2])
-		if name == "" || seen[name] { continue }
-		seen[name] = true
-
-		r := testResult{name: name}
-		if m[1] == "FAIL" { r.failed = true }
-		if d, ok := detailsByTest[name]; ok {
-			r.details = d
-		}
-		results = append(results, r)
-	}
-	cmd2.Wait()
-
-	filtered := make([]testResult, 0)
+	// Hide a parent test row when its sub-tests already cover the failure detail.
+	filtered := make([]testResult, 0, len(results))
 	for _, r := range results {
 		hasSub := false
 		for _, other := range results {
@@ -103,38 +111,87 @@ func runTests(submitting bool) error {
 				break
 			}
 		}
-		if hasSub && len(r.details) == 0 { continue }
+		if hasSub && len(r.details) == 0 {
+			continue
+		}
 		filtered = append(filtered, r)
 	}
 
-	passed, failed := 0, 0
+	passed, failed, skipped := 0, 0, 0
 	fmt.Println()
 	for i, r := range filtered {
-		name := humanName(r.name)
-		status := color.Green("PASS")
-		if r.failed {
-			status = color.Red("FAIL")
-			failed++
-		} else {
-			passed++
+		if i > 0 {
+			fmt.Println()
 		}
-
-		if i > 0 { fmt.Println() }
-		fmt.Printf("  %-45s %s\n", name, status)
-		if r.failed && len(r.details) > 0 {
-			for _, d := range r.details {
-				fmt.Printf("  %s\n", color.Yellow(cleanDetail(d)))
+		switch {
+		case r.skipped:
+			skipped++
+			fmt.Printf("  %s  %s\n", ui.Muted.Render("○"), ui.Muted.Render(humanName(r.name)))
+		case r.failed:
+			failed++
+			fmt.Printf("  %s  %s\n", ui.Error.Render(ui.GlyphFail), ui.Bold.Render(humanName(r.name)))
+			if len(r.details) > 0 {
+				fmt.Println(ui.FailBlock.Render(formatDetails(r.details)))
 			}
+		default:
+			passed++
+			fmt.Printf("  %s  %s\n", ui.Success.Render(ui.GlyphPass), humanName(r.name))
 		}
 	}
 
 	fmt.Println()
-	if failed == 0 {
-		if !submitting { fmt.Printf("  All %d tests passed. Run: lst submit\n", passed) }
+	summary := fmt.Sprintf("%d passed", passed)
+	if failed > 0 {
+		summary += fmt.Sprintf(" · %d failed", failed)
+	}
+	if skipped > 0 {
+		summary += fmt.Sprintf(" · %d skipped", skipped)
+	}
+	if failed == 0 && passed > 0 {
+		fmt.Println(ui.SummaryPass.Render(summary))
+		if !submitting {
+			fmt.Println()
+			fmt.Println("  " + ui.Muted.Render("All green. Run: ") + ui.Hint.Render("lst submit"))
+		}
 		return nil
 	}
-	fmt.Printf("  %d passed, %d failed.\n", passed, failed)
-	return nil
+	fmt.Println(ui.SummaryFail.Render(summary))
+	return fmt.Errorf("%d test(s) failed", failed)
+}
+
+var expectedGotRe = regexp.MustCompile(`(?i)^\s*(expected|got|want|have|actual)\b[\s:=-]*(.*)$`)
+
+// formatDetails groups raw "expected: X / got: Y"–style lines into a tidy
+// block. Lines that don't match the pattern are kept verbatim.
+func formatDetails(lines []string) string {
+	out := make([]string, 0, len(lines))
+	for _, l := range lines {
+		l = cleanDetail(l)
+		if l == "" {
+			continue
+		}
+		if m := expectedGotRe.FindStringSubmatch(l); m != nil {
+			label := strings.ToLower(m[1])
+			value := strings.TrimSpace(m[2])
+			switch label {
+			case "got", "actual", "have":
+				out = append(out, fmt.Sprintf("%s  %s", ui.Error.Render(pad(label)), value))
+			default:
+				out = append(out, fmt.Sprintf("%s  %s", ui.Hint.Render(pad(label)), value))
+			}
+			continue
+		}
+		out = append(out, l)
+	}
+	return strings.Join(out, "\n")
+}
+
+func pad(s string) string {
+	const w = 8
+	if len(s) >= w {
+		return s
+	}
+	return s + strings.Repeat(" ", w-len(s))
 }
 
 func humanName(name string) string {
