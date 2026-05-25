@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
 
 	"github.com/spf13/cobra"
 )
@@ -30,6 +31,23 @@ var fetchCmd = &cobra.Command{
 		zipURL := fmt.Sprintf("%s/api/download/%s", cfg.Server, slug)
 		if err := downloadAndUnzip(zipURL, dir); err != nil {
 			return fmt.Errorf("download: %w", err)
+		}
+
+		// Select the right test binary for this platform
+		testName := fmt.Sprintf("test-%s-%s", runtime.GOOS, runtime.GOARCH)
+		if runtime.GOOS == "windows" { testName += ".exe" }
+		testSrc := filepath.Join(dir, testName)
+		testDst := filepath.Join(dir, "test")
+		if runtime.GOOS == "windows" { testDst += ".exe" }
+		if _, err := os.Stat(testSrc); err == nil {
+			os.Rename(testSrc, testDst)
+			os.Chmod(testDst, 0755)
+		}
+		// Clean up unused test binaries
+		for _, name := range []string{"test-linux-amd64", "test-darwin-amd64", "test-darwin-arm64", "test-windows-amd64.exe"} {
+			if name != testName {
+				os.Remove(filepath.Join(dir, name))
+			}
 		}
 
 		// Rename template.go to main.go if needed
