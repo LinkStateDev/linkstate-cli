@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"strconv"
@@ -15,59 +14,40 @@ var hintCmd = &cobra.Command{
 	Use:   "hint [level]",
 	Short: "Show a hint for the current task",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		data, err := os.ReadFile("test_config.json")
-		if err != nil {
-			return fmt.Errorf("not in a task directory? Run: lst fetch <id>")
-		}
-
-		var cfg struct {
-			Hints []string `json:"hints"`
-		}
-		if err := json.Unmarshal(data, &cfg); err != nil {
-			return fmt.Errorf("parse test_config.json: %w", err)
-		}
-
-		if len(cfg.Hints) == 0 {
-			fmt.Println("No hints available for this task.")
-			return nil
-		}
-
 		level := 1
-		if len(args) > 0 {
-			level, _ = strconv.Atoi(args[0])
-		}
-		if level < 1 {
-			level = 1
-		}
-		if level > len(cfg.Hints) {
-			level = len(cfg.Hints)
+		if len(args) > 0 { level, _ = strconv.Atoi(args[0]) }
+		if level < 1 { level = 1 }
+		if level > 3 { level = 3 }
+
+		hintFile := fmt.Sprintf("hint%d.md", level)
+		data, err := os.ReadFile(hintFile)
+		if err != nil {
+			return fmt.Errorf("hint %d not available", level)
 		}
 
-		hint := cfg.Hints[level-1]
-		fmt.Printf("%s %s\n", color.Bold(color.Yellow("💡 Hint")), color.Faint(fmt.Sprintf("(%d/%d):", level, len(cfg.Hints))))
+		fmt.Printf("%s %s\n", color.Bold(color.Yellow("💡 Hint")), color.Faint(fmt.Sprintf("(%d/3):", level)))
 		fmt.Println()
 
 		r, _ := glamour.NewTermRenderer(
 			glamour.WithStandardStyle("dark"),
 			glamour.WithWordWrap(90),
 		)
-		out, err := r.Render(hint)
+		out, err := r.Render(string(data))
 		if err != nil {
-			fmt.Println(hint)
+			fmt.Println(string(data))
 		} else {
 			fmt.Print(out)
 		}
 
-		if level < len(cfg.Hints) {
-			fmt.Printf("\nNeed more details? Run: lst hint %d\n", level+1)
-		} else if level > 1 {
+		if level < 3 {
+			if _, err := os.Stat(fmt.Sprintf("hint%d.md", level+1)); err == nil {
+				fmt.Printf("\nNeed more details? Run: lst hint %d\n", level+1)
+			}
+		} else {
 			fmt.Println("\nThat was the last hint. Good luck!")
 		}
-
 		return nil
 	},
 }
 
-func init() {
-	rootCmd.AddCommand(hintCmd)
-}
+func init() { rootCmd.AddCommand(hintCmd) }

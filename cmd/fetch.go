@@ -57,11 +57,6 @@ var fetchCmd = &cobra.Command{
 			os.Rename(tmplFile, mainFile)
 		}
 
-		// Write test_config.json from API
-		if err := os.WriteFile(filepath.Join(dir, "test_config.json"), []byte(l.TestConfig), 0644); err != nil {
-			return fmt.Errorf("write test_config.json: %w", err)
-		}
-
 		meta, _ := json.MarshalIndent(map[string]any{"lesson_id": l.ID, "slug": slug, "title": l.Title}, "", "  ")
 		if err := os.WriteFile(filepath.Join(dir, ".linkstate.json"), meta, 0644); err != nil {
 			return fmt.Errorf("write .linkstate.json: %w", err)
@@ -69,6 +64,7 @@ var fetchCmd = &cobra.Command{
 		fmt.Printf("Created %s/\n", dir)
 		fmt.Println("  main.go              → your code")
 		fmt.Println("  test                 → local test runner")
+		fmt.Println("  .linkstate.json      → metadata")
 		fmt.Println("  .linkstate.json      → metadata")
 		fmt.Printf("\nNext: cd %s && lst test\n", dir)
 		fmt.Println("      lst submit")
