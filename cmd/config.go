@@ -30,7 +30,7 @@ var configCmd = &cobra.Command{
 		case "server", "path":
 			if key == "server" { cfg.Server = val } else { cfg.Path = val }
 		default:
-			return fmt.Errorf("unknown key: %s (available: server, workspace)", key)
+			return fmt.Errorf("unknown key: %s (available: server, path)", key)
 		}
 		if err := config.Save(cfg); err != nil {
 			return fmt.Errorf("save: %w", err)

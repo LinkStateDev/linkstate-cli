@@ -1,7 +1,5 @@
 package color
 
-var osStdout = 1 // can be swapped for tests
-
 func Green(msg string) string  { return "\033[32m" + msg + "\033[0m" }
 func Red(msg string) string    { return "\033[31m" + msg + "\033[0m" }
 func Yellow(msg string) string { return "\033[33m" + msg + "\033[0m" }

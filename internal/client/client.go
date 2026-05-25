@@ -32,65 +32,13 @@ func (c *Client) Login(email, password string) (string, error) {
 	return r.Token, nil
 }
 
-type Course struct {
-	ID          int    `json:"id"`
-	Title       string `json:"title"`
-	Description string `json:"description"`
-}
-
-func (c *Client) ListCourses() ([]Course, error) {
-	resp, err := c.do("GET", "/api/courses", nil, "")
-	if err != nil { return nil, err }
-	var courses []Course
-	if err := decode(resp, &courses); err != nil { return nil, err }
-	return courses, nil
-}
-
 type Lesson struct {
 	ID         int    `json:"id"`
-	CourseID   int    `json:"course_id"`
 	CourseSlug string `json:"course_slug"`
-	ChapterID  int    `json:"chapter_id"`
 	Slug       string `json:"slug"`
 	Title      string `json:"title"`
-	Content    string `json:"content"`
-	IsFree     bool   `json:"is_free"`
-	TaskType   string `json:"task_type"`
 	Template   string `json:"template"`
 	TestConfig string `json:"test_config"`
-	SortOrder  int    `json:"sort_order"`
-	Status     string `json:"status,omitempty"`
-}
-
-type Chapter struct {
-	ID        int      `json:"id"`
-	CourseID  int      `json:"course_id"`
-	Title     string   `json:"title"`
-	SortOrder int      `json:"sort_order"`
-	Lessons   []Lesson `json:"lessons"`
-}
-
-type CourseDetail struct {
-	ID          int       `json:"id"`
-	Title       string    `json:"title"`
-	Description string    `json:"description"`
-	Chapters    []Chapter `json:"chapters"`
-}
-
-func (c *Client) GetCourse(id int) (*CourseDetail, error) {
-	resp, err := c.do("GET", fmt.Sprintf("/api/courses/%d", id), nil, c.Token)
-	if err != nil { return nil, err }
-	var d CourseDetail
-	if err := decode(resp, &d); err != nil { return nil, err }
-	return &d, nil
-}
-
-func (c *Client) GetLesson(id int) (*Lesson, error) {
-	resp, err := c.do("GET", fmt.Sprintf("/api/lessons/%d", id), nil, c.Token)
-	if err != nil { return nil, err }
-	var l Lesson
-	if err := decode(resp, &l); err != nil { return nil, err }
-	return &l, nil
 }
 
 func (c *Client) GetLessonBySlug(slug string) (*Lesson, error) {
@@ -110,8 +58,6 @@ func (c *Client) GetHint(slug string, level int) (map[string]any, error) {
 }
 
 type SubmitResponse struct {
-	TaskID          int    `json:"task_id"`
-	Status          string `json:"status"`
 	LessonCompleted bool   `json:"lesson_completed,omitempty"`
 	NextLessonID    *int   `json:"next_lesson_id,omitempty"`
 }

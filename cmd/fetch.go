@@ -93,8 +93,3 @@ func downloadAndUnzip(url, dir string) error {
 }
 
 func init() { rootCmd.AddCommand(fetchCmd) }
-
-func findSolutionFile() string {
-	if _, err := os.Stat("main.go"); err == nil { return "main.go" }
-	return ""
-}
