@@ -28,6 +28,7 @@ type testLine struct {
 }
 
 var testLineRe = regexp.MustCompile(`^\s*(--- (PASS|FAIL|SKIP):?\s*(.*?)(?:\s+\(\d+\.\d+s\))?\s*)$`)
+var testDetailRe = regexp.MustCompile(`^\s*test_test.go:\d+:\s*`)
 
 func runTests(submitting bool) error {
 	if _, err := os.Stat("main.go"); os.IsNotExist(err) {
@@ -51,13 +52,16 @@ func runTests(submitting bool) error {
 	scanner := bufio.NewScanner(stdout)
 	for scanner.Scan() {
 		text := scanner.Text()
+		if strings.HasPrefix(text, "=== ") { continue } // skip === RUN/PASS
+
 		m := testLineRe.FindStringSubmatch(text)
 		if m == nil {
 			// detail line (test output)
 			if len(lines) > 0 && strings.TrimSpace(text) != "" {
+				clean := testDetailRe.ReplaceAllString(strings.TrimSpace(text), "")
 				last := &lines[len(lines)-1]
-				if last.detail != "" { last.detail += "\n" }
-				last.detail += strings.TrimSpace(text)
+				if last.detail != "" && clean != "" { last.detail += "\n" }
+				last.detail += clean
 			}
 			continue
 		}

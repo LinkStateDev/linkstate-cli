@@ -1,12 +1,1 @@
 lst
-linkstate-cli
-task-*/
-lesson-*/
-intro/
-cli-arguments/
-types-parsing/
-bit-magic/
-structs-json/
-ipcalc/
-*.test
-.envintro/
