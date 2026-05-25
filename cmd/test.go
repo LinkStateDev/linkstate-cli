@@ -8,7 +8,6 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/LinkStateDev/linkstate-cli/internal/color"
 	"github.com/spf13/cobra"
 )
 
@@ -44,7 +43,6 @@ func runTests(submitting bool) error {
 	if err != nil { return err }
 	cmd.Start()
 
-	// First pass: collect details by test name (from === RUN lines)
 	detailsByTest := make(map[string][]string)
 	currentTest := ""
 	scanner := bufio.NewScanner(stdout)
@@ -71,12 +69,10 @@ func runTests(submitting bool) error {
 	}
 	cmd.Wait()
 
-	// Second pass: collect result lines only
 	cmd2 := exec.Command(testBin, "-test.v")
 	stdout2, _ := cmd2.StdoutPipe()
 	cmd2.Start()
 
-	// Preserve test order from output
 	var results []testResult
 	seen := make(map[string]bool)
 	scanner2 := bufio.NewScanner(stdout2)
@@ -90,7 +86,6 @@ func runTests(submitting bool) error {
 
 		r := testResult{name: name}
 		if m[1] == "FAIL" { r.failed = true }
-		// Merge details from first pass
 		if d, ok := detailsByTest[name]; ok {
 			r.details = d
 		}
@@ -98,7 +93,6 @@ func runTests(submitting bool) error {
 	}
 	cmd2.Wait()
 
-	// Filter: skip empty parent tests that have sub-tests
 	filtered := make([]testResult, 0)
 	for _, r := range results {
 		hasSub := false
@@ -113,26 +107,34 @@ func runTests(submitting bool) error {
 	}
 
 	passed, failed := 0, 0
+	fmt.Println()
 	for _, r := range filtered {
-		if r.failed {
-			fmt.Printf("  %s %s\n", color.Red("❌"), r.name)
+		name := cleanTestName(r.name)
+		status := "PASS"
+		if r.failed { status = "FAIL"; failed++ } else { passed++ }
+
+		fmt.Printf("  %-44s %s\n", name, status)
+		if r.failed && len(r.details) > 0 {
 			for _, d := range r.details {
-				fmt.Printf("     %s\n", color.Yellow(d))
+				fmt.Printf("    %s\n", d)
 			}
-			failed++
-		} else {
-			fmt.Printf("  %s %s\n", color.Green("✅"), r.name)
-			passed++
 		}
 	}
 
 	fmt.Println()
 	if failed == 0 {
-		if !submitting { fmt.Printf("All %d tests passed! Run: lst submit\n", passed) }
+		if !submitting { fmt.Printf("All %d tests passed. Run: lst submit\n", passed) }
 		return nil
 	}
 	fmt.Printf("%d passed, %d failed.\n", passed, failed)
 	return nil
+}
+
+func cleanTestName(name string) string {
+	if idx := strings.LastIndex(name, "/"); idx > 0 {
+		return name[idx+1:]
+	}
+	return name
 }
 
 func init() { rootCmd.AddCommand(testCmd) }
