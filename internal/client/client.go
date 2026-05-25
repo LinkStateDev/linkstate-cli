@@ -101,6 +101,14 @@ func (c *Client) GetLessonBySlug(slug string) (*Lesson, error) {
 	return &l, nil
 }
 
+func (c *Client) GetHint(slug string, level int) (map[string]any, error) {
+	resp, err := c.do("GET", fmt.Sprintf("/api/lessons/slug/%s/hints/%d", slug, level), nil, c.Token)
+	if err != nil { return nil, err }
+	var r map[string]any
+	if err := decode(resp, &r); err != nil { return nil, err }
+	return r, nil
+}
+
 type SubmitResponse struct {
 	TaskID          int    `json:"task_id"`
 	Status          string `json:"status"`

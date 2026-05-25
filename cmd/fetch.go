@@ -65,7 +65,6 @@ var fetchCmd = &cobra.Command{
 		fmt.Println("  main.go              → your code")
 		fmt.Println("  test                 → local test runner")
 		fmt.Println("  .linkstate.json      → metadata")
-		fmt.Println("  .linkstate.json      → metadata")
 		fmt.Printf("\nNext: cd %s && lst test\n", dir)
 		fmt.Println("      lst submit")
 		return nil
