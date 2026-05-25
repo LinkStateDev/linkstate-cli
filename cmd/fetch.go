@@ -27,7 +27,7 @@ var fetchCmd = &cobra.Command{
 		dir := filepath.Join(cfg.Path, l.CourseSlug, slug)
 		if err := os.MkdirAll(dir, 0755); err != nil { return fmt.Errorf("create dir: %w", err) }
 
-		zipURL := fmt.Sprintf("%s/static/zips/%s.zip", cfg.Server, slug)
+		zipURL := fmt.Sprintf("%s/api/download/%s", cfg.Server, slug)
 		if err := downloadAndUnzip(zipURL, dir); err != nil {
 			return fmt.Errorf("download: %w", err)
 		}
@@ -59,7 +59,12 @@ var fetchCmd = &cobra.Command{
 }
 
 func downloadAndUnzip(url, dir string) error {
-	resp, err := http.Get(url)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil { return err }
+	if cfg.Token != "" {
+		req.Header.Set("Authorization", "Bearer "+cfg.Token)
+	}
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil { return err }
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
