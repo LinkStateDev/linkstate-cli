@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"os/exec"
 
 	"github.com/LinkStateDev/linkstate-cli/internal/color"
 	"github.com/spf13/cobra"
@@ -23,42 +22,10 @@ var submitCmd = &cobra.Command{
 		}
 		if err := json.Unmarshal(metaData, &meta); err != nil { return fmt.Errorf("parse .linkstate.json: %w", err) }
 
-		if _, err := os.Stat("main.go"); os.IsNotExist(err) {
-			return fmt.Errorf("main.go not found in current directory")
-		}
-		testBin := "./test"
-		if _, err := os.Stat(testBin); os.IsNotExist(err) {
-			return fmt.Errorf("test binary not found. Run: lst fetch <slug>")
-		}
-
-		exec.Command("go", "build", "-o", "solution", "main.go").Run()
-		defer os.Remove("solution")
-
-		out, err := exec.Command(testBin).Output()
-		exitOK := err == nil
-
-		var results []testOutput
-		if json.Unmarshal(out, &results) != nil {
-			fmt.Println(string(out))
-		} else {
-			for _, r := range results {
-				if r.Passed {
-					fmt.Printf("  %s %s: %s\n", color.Green("✅"), r.Name, color.Green("PASS"))
-				} else {
-					fmt.Printf("  %s %s: %s\n", color.Red("❌"), r.Name, color.Red("FAIL"))
-					if r.Expected != "" {
-						fmt.Printf("     %s %s\n", color.Faint("expected:"), color.Yellow(r.Expected))
-						fmt.Printf("     %s %s\n", color.Faint("actual:"), color.Yellow(r.Actual))
-					}
-					if r.Hint != "" {
-						fmt.Printf("     %s %s\n", color.Bold("💡 Hint:"), r.Hint)
-					}
-				}
-			}
-		}
-
+		testErr := runTests(true)
 		status := "fail"
-		if exitOK { status = "pass" }
+		if testErr == nil { status = "pass" }
+
 		resp, err := cliClient.Submit(meta.LessonID, status)
 		if err != nil { return fmt.Errorf("submit: %w", err) }
 		fmt.Println()
