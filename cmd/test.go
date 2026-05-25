@@ -39,9 +39,6 @@ func runTests(submitting bool) error {
 		return fmt.Errorf("test binary not found. Run: lst fetch <slug>")
 	}
 
-	exec.Command("go", "build", "-o", "solution", "main.go").Run()
-	defer os.Remove("solution")
-
 	cmd := exec.Command(testBin, "-test.v")
 	stdout, err := cmd.StdoutPipe()
 	if err != nil { return err }
