@@ -84,7 +84,7 @@ LinkState is not:
 ## Hierarchy
 
 ```text
-Track → Chapter / Module → Lesson → Checkpoint
+Track → Module → Lesson → Checkpoint
 ```
 
 ## Definitions
@@ -102,7 +102,7 @@ Network Observability in Go
 Protocol Internals
 ```
 
-### Chapter / Module
+### Module
 
 A substantial artifact or capability inside a track.
 
@@ -139,7 +139,7 @@ A checkpoint has:
 
 ## Important principle
 
-> **Lessons teach concepts. Checkpoints verify progress. Chapters produce artifacts.**
+> **Lessons teach concepts. Checkpoints verify progress. Modules produce artifacts.**
 
 Or:
 
@@ -193,7 +193,7 @@ Foundation:
 └── .linkstate/
 ```
 
-Flagship chapter:
+Flagship module:
 
 ```text
 ~/linkstate/netops-framework/state-tester/
@@ -205,7 +205,7 @@ Flagship chapter:
 └── .linkstate/
 ```
 
-One workspace per Foundation track or per flagship artifact/chapter.
+One workspace per Foundation track or per flagship artifact/module.
 
 ## Core `lst` commands
 
@@ -213,7 +213,7 @@ Minimum user-facing workflow:
 
 ```bash
 lst init
-lst start <track-or-chapter>
+lst start <track-or-module>
 lst status
 lst open
 lst next
@@ -236,7 +236,7 @@ lst hint
 
 ## `lst start`
 
-Starts a track or chapter.
+Starts a track or module.
 
 Example:
 
@@ -335,7 +335,7 @@ lst resume
 
 Responsibilities:
 
-- show current track/chapter/lesson/checkpoint;
+- show current track/module/lesson/checkpoint;
 - open lesson URL or print it;
 - show workspace;
 - show target file and line;
@@ -376,7 +376,7 @@ Example:
 Track:
 Build Your NetOps Framework
 
-Chapter:
+Module:
 State Tester
 
 Lesson:
@@ -430,7 +430,7 @@ Gated parts should include:
 - lab topology bundles;
 - submit/progress sync;
 - reference solutions;
-- premium chapters;
+- premium modules;
 - support bundle tooling;
 - certificates later.
 
@@ -496,7 +496,7 @@ Private compiled checkers cover:
 Prefer:
 
 ```text
-one checker binary per chapter per version per OS/arch
+one checker binary per module per version per OS/arch
 ```
 
 Example:
@@ -581,7 +581,7 @@ Reasonable v1 goals:
 
 ```text
 1. Anonymous users cannot download starter repos.
-2. Free users cannot download premium chapter assets.
+2. Free users cannot download premium module assets.
 3. Private tests are not shipped as normal files.
 4. Reference solutions are gated.
 5. Lab bundles are gated.
@@ -1238,7 +1238,7 @@ Post-check / Rollback / Audit
 1. Start NetOps Framework workspace.
 2. Inspect lab topology.
 3. Run first framework command against fixtures.
-4. Understand chapter artifact layout.
+4. Understand module artifact layout.
 ```
 
 ---
@@ -2941,7 +2941,7 @@ No auth, billing, dashboard or certificates yet.
 2. Add remote progress sync.
 3. Gate premium starter repos/checkers.
 4. Add billing.
-5. Launch State Tester + Reports & CI as first paid chapter.
+5. Launch State Tester + Reports & CI as first paid module.
 ```
 
 ## Phase 4 — Expand flagship
@@ -3309,7 +3309,7 @@ Track 4: Protocol Internals
 
 Do not start by building all of this.
 
-Start with one chapter that proves the product:
+Start with one module that proves the product:
 
 ```text
 State Tester Alpha

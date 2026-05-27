@@ -100,6 +100,23 @@ func (c *Client) Submit(lessonID int, status string) (*SubmitResponse, error) {
 	return &r, nil
 }
 
+type StartResponse struct {
+	Lesson          Lesson `json:"lesson"`
+	ModuleCompleted bool   `json:"module_completed"`
+}
+
+func (c *Client) GetStartLesson(courseSlug, moduleSlug string) (*StartResponse, error) {
+	resp, err := c.do("GET", fmt.Sprintf("/api/start/%s/%s", courseSlug, moduleSlug), nil, c.Token)
+	if err != nil {
+		return nil, err
+	}
+	var r StartResponse
+	if err := decode(resp, &r); err != nil {
+		return nil, err
+	}
+	return &r, nil
+}
+
 type ProgressItem struct {
 	LessonID    int     `json:"lesson_id"`
 	LessonSlug  string  `json:"lesson_slug"`

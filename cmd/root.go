@@ -54,7 +54,10 @@ var rootCmd = &cobra.Command{
 			fmt.Printf("  %-10s %s\n", ui.Hint.Render(name), ui.Muted.Render(desc))
 		}
 		printRow("auth", "Authenticate via browser")
+		printRow("start", "Start a course at the first unsolved lesson")
 		printRow("fetch", "Download a task to solve locally")
+		printRow("next", "Fetch the lesson after the current one")
+		printRow("resume", "Fetch the first unsolved lesson")
 		printRow("test", "Run local tests against your solution")
 		printRow("submit", "Submit your solution result")
 		printRow("progress", "Show your learning progress")
