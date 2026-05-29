@@ -41,11 +41,11 @@ var progressCmd = &cobra.Command{
 			titleByID   = map[string]string{}
 		)
 		for _, p := range items {
-			if _, ok := byCourse[p.CourseSlug]; !ok {
-				courseOrder = append(courseOrder, p.CourseSlug)
-				titleByID[p.CourseSlug] = p.CourseTitle
+			if _, ok := byCourse[p.TrackSlug]; !ok {
+				courseOrder = append(courseOrder, p.TrackSlug)
+				titleByID[p.TrackSlug] = p.TrackTitle
 			}
-			byCourse[p.CourseSlug] = append(byCourse[p.CourseSlug], p)
+			byCourse[p.TrackSlug] = append(byCourse[p.TrackSlug], p)
 		}
 
 		for i, slug := range courseOrder {

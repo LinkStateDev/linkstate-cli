@@ -8,6 +8,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var nextForce bool
+
 var nextCmd = &cobra.Command{
 	Use:   "next",
 	Short: "Fetch the lesson after the current one",
@@ -34,12 +36,14 @@ var nextCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return fetchAndPrepareLesson(nextSlug)
+		dir, err := fetchAndPrepareLesson(nextSlug, nextForce)
+		if err != nil {
+			return err
+		}
+		return cdInto(dir)
 	},
 }
 
-// nextLessonAfter returns the slug of the lesson that follows currentSlug
-// within the same course in the server-provided ordering.
 func nextLessonAfter(items []client.ProgressItem, currentSlug string) (string, error) {
 	idx := -1
 	for i, p := range items {
@@ -54,9 +58,11 @@ func nextLessonAfter(items []client.ProgressItem, currentSlug string) (string, e
 			"run: lst progress",
 		)
 	}
-	courseSlug := items[idx].CourseSlug
-	if idx+1 < len(items) && items[idx+1].CourseSlug == courseSlug {
-		return items[idx+1].LessonSlug, nil
+	trackSlug := items[idx].TrackSlug
+	for i := idx + 1; i < len(items); i++ {
+		if items[i].TrackSlug == trackSlug && items[i].LessonSlug != currentSlug {
+			return items[i].LessonSlug, nil
+		}
 	}
 	return "", errorWithHint(
 		"no more lessons in this course",
@@ -64,4 +70,7 @@ func nextLessonAfter(items []client.ProgressItem, currentSlug string) (string, e
 	)
 }
 
-func init() { rootCmd.AddCommand(nextCmd) }
+func init() {
+	nextCmd.Flags().BoolVarP(&nextForce, "force", "f", false, "Overwrite existing lesson directory")
+	rootCmd.AddCommand(nextCmd)
+}

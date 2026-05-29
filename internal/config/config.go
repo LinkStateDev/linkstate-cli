@@ -8,10 +8,13 @@ import (
 )
 
 type Config struct {
-	Server string `json:"server"`
-	Token  string `json:"token"`
-	Email  string `json:"email"`
-	Path   string `json:"path"`
+	Server           string `json:"server"`
+	Token            string `json:"token"`
+	Email            string `json:"email"`
+	Path             string `json:"path"`
+	LastTrackSlug    string `json:"last_track_slug,omitempty"`
+	LastLessonSlug   string `json:"last_lesson_slug,omitempty"`
+	LastLessonTitle  string `json:"last_lesson_title,omitempty"`
 }
 
 func Path() string {

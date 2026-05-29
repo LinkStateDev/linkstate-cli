@@ -10,9 +10,6 @@ import (
 	"time"
 )
 
-// ErrUnauthorized is returned (wrapped) by Client methods when the server
-// responds with HTTP 401. Callers detect it via errors.Is so they can clear
-// the local token and prompt the user to re-authenticate.
 var ErrUnauthorized = errors.New("unauthorized")
 
 type Client struct {
@@ -42,25 +39,49 @@ func (c *Client) Login(email, password string) (string, error) {
 	return r.Token, nil
 }
 
-type Lesson struct {
-	ID         int    `json:"id"`
-	CourseSlug string `json:"course_slug"`
-	Slug       string `json:"slug"`
-	Title      string `json:"title"`
-	Template   string `json:"template"`
-	TestConfig string `json:"test_config"`
+type Task struct {
+	ID        int    `json:"id"`
+	LessonID  int    `json:"lesson_id"`
+	Slug      string `json:"slug"`
+	Title     string `json:"title"`
+	SortOrder int    `json:"sort_order"`
 }
 
-func (c *Client) GetLessonBySlug(slug string) (*Lesson, error) {
-	resp, err := c.do("GET", "/api/lessons/slug/"+slug, nil, c.Token)
+type Lesson struct {
+	ID        int    `json:"id"`
+	TrackSlug string `json:"track_slug"`
+	Slug      string `json:"slug"`
+	Title     string `json:"title"`
+	Template  string `json:"template"`
+}
+
+type lessonResponse struct {
+	Lesson Lesson `json:"lesson"`
+	Tasks  []Task `json:"tasks"`
+}
+
+func (c *Client) GetLesson(id int) (*lessonResponse, error) {
+	resp, err := c.do("GET", fmt.Sprintf("/api/lessons/%d", id), nil, c.Token)
 	if err != nil {
 		return nil, err
 	}
-	var l Lesson
-	if err := decode(resp, &l); err != nil {
+	var lr lessonResponse
+	if err := decode(resp, &lr); err != nil {
 		return nil, err
 	}
-	return &l, nil
+	return &lr, nil
+}
+
+func (c *Client) GetLessonBySlug(slug string) (*Lesson, error) {
+	resp, err := c.do("GET", "/api/s/"+slug, nil, c.Token)
+	if err != nil {
+		return nil, err
+	}
+	var lr lessonResponse
+	if err := decode(resp, &lr); err != nil {
+		return nil, err
+	}
+	return &lr.Lesson, nil
 }
 
 type HintResponse struct {
@@ -69,8 +90,8 @@ type HintResponse struct {
 	Hint  string `json:"hint"`
 }
 
-func (c *Client) GetHint(slug string, level int) (*HintResponse, error) {
-	resp, err := c.do("GET", fmt.Sprintf("/api/lessons/slug/%s/hints/%d", slug, level), nil, c.Token)
+func (c *Client) GetHint(taskID int, level int) (*HintResponse, error) {
+	resp, err := c.do("GET", fmt.Sprintf("/api/tasks/%d/hints/%d", taskID, level), nil, c.Token)
 	if err != nil {
 		return nil, err
 	}
@@ -82,14 +103,17 @@ func (c *Client) GetHint(slug string, level int) (*HintResponse, error) {
 }
 
 type SubmitResponse struct {
+	TaskID          int     `json:"task_id"`
 	LessonCompleted bool    `json:"lesson_completed,omitempty"`
+	NextTaskID      *int    `json:"next_task_id,omitempty"`
+	NextTaskSlug    *string `json:"next_task_slug,omitempty"`
 	NextLessonID    *int    `json:"next_lesson_id,omitempty"`
 	NextLessonSlug  *string `json:"next_lesson_slug,omitempty"`
 }
 
-func (c *Client) Submit(lessonID int, status string) (*SubmitResponse, error) {
+func (c *Client) Submit(taskID int, status string) (*SubmitResponse, error) {
 	body := map[string]string{"status": status}
-	resp, err := c.do("POST", fmt.Sprintf("/api/lessons/%d/submit", lessonID), body, c.Token)
+	resp, err := c.do("POST", fmt.Sprintf("/api/tasks/%d/submit", taskID), body, c.Token)
 	if err != nil {
 		return nil, err
 	}
@@ -101,12 +125,13 @@ func (c *Client) Submit(lessonID int, status string) (*SubmitResponse, error) {
 }
 
 type StartResponse struct {
+	Task            Task   `json:"task"`
 	Lesson          Lesson `json:"lesson"`
 	ModuleCompleted bool   `json:"module_completed"`
 }
 
-func (c *Client) GetStartLesson(courseSlug, moduleSlug string) (*StartResponse, error) {
-	resp, err := c.do("GET", fmt.Sprintf("/api/start/%s/%s", courseSlug, moduleSlug), nil, c.Token)
+func (c *Client) GetStartLesson(trackSlug, moduleSlug string) (*StartResponse, error) {
+	resp, err := c.do("GET", fmt.Sprintf("/api/start/%s/%s", trackSlug, moduleSlug), nil, c.Token)
 	if err != nil {
 		return nil, err
 	}
@@ -118,13 +143,16 @@ func (c *Client) GetStartLesson(courseSlug, moduleSlug string) (*StartResponse, 
 }
 
 type ProgressItem struct {
-	LessonID    int     `json:"lesson_id"`
-	LessonSlug  string  `json:"lesson_slug"`
-	LessonTitle string  `json:"lesson_title"`
-	CourseSlug  string  `json:"course_slug"`
-	CourseTitle string  `json:"course_title"`
-	Status      string  `json:"status"`
-	CompletedAt *string `json:"completed_at,omitempty"`
+	TaskID       int     `json:"task_id"`
+	TaskSlug     string  `json:"task_slug"`
+	TaskTitle    string  `json:"task_title"`
+	LessonID     int     `json:"lesson_id"`
+	LessonSlug   string  `json:"lesson_slug"`
+	LessonTitle  string  `json:"lesson_title"`
+	TrackSlug    string  `json:"track_slug"`
+	TrackTitle   string  `json:"track_title"`
+	Status       string  `json:"status"`
+	CompletedAt  *string `json:"completed_at,omitempty"`
 }
 
 func (c *Client) GetProgress() ([]ProgressItem, error) {
