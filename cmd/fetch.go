@@ -151,7 +151,17 @@ func downloadAndUnzip(url, dir, slug string) error {
 	defer zr.Close()
 
 	for _, zf := range zr.File {
-		dest := filepath.Join(dir, zf.Name)
+		cleanName := filepath.Clean(zf.Name)
+		if strings.HasPrefix(cleanName, "..") {
+			return fmt.Errorf("invalid zip entry: %s", zf.Name)
+		}
+		dest := filepath.Join(dir, cleanName)
+		if !strings.HasPrefix(filepath.Clean(dest)+string(filepath.Separator), filepath.Clean(dir)+string(filepath.Separator)) {
+			return fmt.Errorf("zip entry escapes directory: %s", zf.Name)
+		}
+		if zf.UncompressedSize64 > 10<<20 {
+			return fmt.Errorf("zip entry too large (%d bytes): %s", zf.UncompressedSize64, zf.Name)
+		}
 		if zf.FileInfo().IsDir() {
 			os.MkdirAll(dest, 0755)
 			continue

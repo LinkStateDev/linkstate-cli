@@ -82,7 +82,11 @@ func runTests(submitting bool) error {
 	}
 
 	all := parseTestOutput(stdout)
-	cmd.Wait()
+	waitErr := cmd.Wait()
+
+	if waitErr != nil && len(all) == 0 {
+		return fmt.Errorf("test binary failed: %w", waitErr)
+	}
 
 	if len(all) == 0 {
 		return errorWithHint(
